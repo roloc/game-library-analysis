@@ -35,9 +35,16 @@ def fetch(npsso):
 
     client = PSNAWP(npsso).me()
     rows = []
+    # Streaming/media apps show up in PSN play history alongside games;
+    # nothing in the stats reliably distinguishes them, so filter by name.
+    APPS = {"netflix", "hulu", "prime video", "media player", "youtube",
+            "spotify", "disney+", "twitch", "crunchyroll", "apple tv", "plex",
+            "hbo max", "max", "paramount+", "peacock"}
     # title_stats() is the same data the PS5 Game Library shows: play
     # duration, last played, per title, newest first. One paginated pass.
     for t in client.title_stats():
+        if (getattr(t, "name", "") or "").strip().lower() in APPS:
+            continue
         minutes = 0
         dur = getattr(t, "play_duration", None)
         if dur is not None:
@@ -54,7 +61,9 @@ def fetch(npsso):
                 "minutes": minutes,
                 "last_played": last.date().isoformat() if last else "",
                 "genre": "",
-                "note": "",
+                # PSN only lists titles actually played, so a zero here is
+                # rounding or a missing stat - never an unplayed game.
+                "note": "" if minutes else "Played on PSN, duration not recorded",
             }
         )
     return rows

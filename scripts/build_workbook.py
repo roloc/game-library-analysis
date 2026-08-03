@@ -106,7 +106,10 @@ def build(rows, genre_lookup, genre_order, out):
     # ---- Backlog ----
     bl = wb.create_sheet("Backlog")
     zeros = [r for r in rows if r["minutes"] == 0]
-    never = sorted([r for r in zeros if r["note"] != UNTRACKED],
+    # A note on a zero-minute row always means "the data is missing", never
+    # "never played" - pre-2009 Steam titles, Xbox titles without a
+    # MinutesPlayed stat, etc. Only unannotated zeros are a real backlog.
+    never = sorted([r for r in zeros if not r["note"]],
                    key=lambda r: (r["genre"], r["name"].lower()))
     untracked = sorted([r for r in zeros if r["note"] == UNTRACKED],
                        key=lambda r: r["name"].lower())
@@ -154,9 +157,12 @@ def build(rows, genre_lookup, genre_order, out):
         ("Total games", f"=COUNTA({NAME})", ""),
         ("Games ever launched", f'=COUNTIF({MIN},">0")', ""),
         ("Never launched (verified)",
-         f'=COUNTIFS({MIN},0,{NOTE},"<>{UNTRACKED}")', "excludes pre-2009 titles"),
+         f'=COUNTIFS({MIN},0,{NOTE},"")', "excludes rows whose playtime data is missing"),
         ("Playtime untracked (pre-2009)",
          f'=COUNTIF({NOTE},"{UNTRACKED}")', "0 hours is a data artifact, not a verdict"),
+        ("Playtime data missing (other)",
+         f'=COUNTIFS({MIN},0,{NOTE},"<>")-COUNTIF({NOTE},"{UNTRACKED}")',
+         "e.g. Xbox titles without a MinutesPlayed stat - played, hours unknown"),
         ("Total hours", f"=SUM({MIN})/60", ""),
         ("Games over 100 hours", f'=COUNTIF({MIN},">=6000")', ""),
     ]
@@ -183,7 +189,7 @@ def build(rows, genre_lookup, genre_order, out):
         c = s.cell(r, 2, f"=SUMIF({GEN},{key},{MIN})/60")
         c.font, c.number_format = BODY, "#,##0"
         s.cell(r, 3, f"=COUNTIF({GEN},{key})").font = BODY
-        s.cell(r, 4, f'=COUNTIFS({GEN},{key},{MIN},0,{NOTE},"<>{UNTRACKED}")').font = BODY
+        s.cell(r, 4, f'=COUNTIFS({GEN},{key},{MIN},0,{NOTE},"")').font = BODY
         r += 1
     s.cell(r, 1, "TOTAL").font = BOLD
     for col in (2, 3, 4):

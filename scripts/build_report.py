@@ -163,8 +163,9 @@ def stacked_chart(items):
 
 def build(rows, out_path, src_name):
     played = [r for r in rows if r["minutes"] > 0]
-    never = [r for r in rows if r["minutes"] == 0 and r["note"] != UNTRACKED]
-    untracked = [r for r in rows if r["note"] == UNTRACKED]
+    # a note on a zero-minute row means "data missing", not "never played"
+    never = [r for r in rows if r["minutes"] == 0 and not r["note"]]
+    nodata = [r for r in rows if r["minutes"] == 0 and r["note"]]
     total_h = sum(r["minutes"] for r in rows) / 60
     platforms = sorted({r["platform"] for r in rows})
 
@@ -215,7 +216,7 @@ def build(rows, out_path, src_name):
 
     backlog = stacked_chart(sorted(
         ((g, sum(1 for r in rs if r["minutes"] > 0),
-          sum(1 for r in rs if r["minutes"] == 0 and r["note"] != UNTRACKED))
+          sum(1 for r in rs if r["minutes"] == 0 and not r["note"]))
          for g, rs in tagged.items()),
         key=lambda t: -(t[1] + t[2])))
 
@@ -231,11 +232,11 @@ def build(rows, out_path, src_name):
                 f"<div class='tile-l'>{esc(label)}</div>{n}</div>")
 
     tiles = "".join([
-        tile(f"{len(rows):,}", "titles owned"),
+        tile(f"{len(rows):,}", "titles"),
         tile(f"{total_h:,.0f}", "hours logged"),
-        tile(f"{len(played):,}", "ever launched"),
-        tile(f"{len(never):,}", "never launched", "excludes pre-2009 titles"),
-        tile(f"{len(untracked):,}", "untracked (pre-2009)", "0h is a data artifact"),
+        tile(f"{len(played):,}", "with playtime"),
+        tile(f"{len(never):,}", "never launched", "verified - data gaps excluded"),
+        tile(f"{len(nodata):,}", "playtime data missing", "pre-2009 Steam, Xbox stat gaps"),
     ])
 
     today = datetime.date.today().isoformat()
@@ -287,8 +288,9 @@ td.num {{ font-variant-numeric: tabular-nums }}
 .tablewrap {{ overflow-x: auto; max-height: 480px; overflow-y: auto }}
 </style></head><body><main>
 <h1>Game Library Report</h1>
-<p class="sub">{esc(', '.join(platforms))} · {len(rows):,} titles · generated {today}
- from {esc(src_name)} · analysis conventions: hours are the ground truth</p>
+<p class="sub">{esc(' · '.join(f"{p} {sum(1 for r in rows if r['platform'] == p):,}" for p in platforms))}
+ · {len(rows):,} titles · generated {today} from {esc(src_name)}
+ · analysis conventions: hours are the ground truth</p>
 
 <div class="tiles">{tiles}</div>
 
@@ -317,7 +319,8 @@ playing.</p>
 <section><h2>Backlog by genre</h2>
 <p class="desc">Played vs never-launched, tagged genres only. Never-launched
 titles in a high hours-per-game genre are the best recommendations available —
-already owned, evidence overwhelming. Pre-2009 untracked titles excluded.</p>
+already owned, evidence overwhelming. Titles whose playtime data is missing
+(pre-2009 Steam, Xbox stat gaps) are excluded from both segments.</p>
 <div class="legend"><span class="l1">Played</span><span class="l2">Never launched</span></div>
 {backlog}</section>
 

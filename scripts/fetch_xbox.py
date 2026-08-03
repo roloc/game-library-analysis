@@ -13,14 +13,12 @@ If you already have the raw title-history JSON saved:
 
     python fetch_xbox.py --from-json titles.json --out xbox.csv
 
-Caveats (see references/platforms.md):
-  - Xbox playtime coverage is patchier than Steam's. Last-played dates and the
-    title list itself are reliable; minutes-played frequently is not exposed,
-    in which case rows carry 0 minutes and a note saying playtime was
-    unavailable rather than implying the game was never touched.
-  - OpenXBL is a third-party service and its response shapes drift. This
-    script parses defensively and skips fields it cannot find rather than
-    crashing; check the printed summary against your console's own library.
+How it works: one call to player/titleHistory for the title list and
+last-played dates, then batched calls to player/stats for MinutesPlayed.
+Not every title exposes that stat (see references/platforms.md - Xbox
+playtime coverage is patchier than Steam's); rows without it carry 0 minutes
+and a note saying playtime was unavailable rather than implying the game was
+never touched.
 """
 import argparse
 import csv
@@ -30,60 +28,80 @@ import sys
 import urllib.request
 
 API = "https://xbl.io/api/v2"
+# xbl.io sits behind Cloudflare, which 403s Python's default user agent.
+UA = "game-library-analysis/1.0"
 PLAYTIME_UNAVAILABLE = "Playtime not exposed by Xbox API"
+STATS_BATCH = 40
 
 
-def _get(path, key):
-    req = urllib.request.Request(
-        f"{API}/{path}",
-        headers={"X-Authorization": key, "Accept": "application/json"},
-    )
+def _call(path, key, body=None):
+    headers = {"X-Authorization": key, "Accept": "application/json", "User-Agent": UA}
+    data = None
+    if body is not None:
+        headers["Content-Type"] = "application/json"
+        data = json.dumps(body).encode()
+    req = urllib.request.Request(f"{API}/{path}", headers=headers, data=data)
     with urllib.request.urlopen(req, timeout=60) as r:
-        return json.load(r)
+        d = json.load(r)
+    # responses arrive wrapped in a "content" envelope
+    return d.get("content", d)
 
 
 def title_history(key):
-    d = _get("player/titleHistory", key)
+    d = _call("player/titleHistory", key)
     titles = d.get("titles")
     if not titles:
         sys.exit(
             "OpenXBL returned no titles. Check that the API key is valid and "
             "the account has played games on this profile."
         )
-    return titles
+    return d.get("xuid"), titles
 
 
-def to_rows(titles):
+def minutes_played(key, xuid, title_ids):
+    """Batched MinutesPlayed lookups. Returns {titleId: minutes}. Titles
+    missing from the response simply don't expose the stat."""
+    out = {}
+    for i in range(0, len(title_ids), STATS_BATCH):
+        chunk = title_ids[i:i + STATS_BATCH]
+        body = {
+            "xuids": [str(xuid)],
+            "stats": [{"name": "MinutesPlayed", "titleId": str(t)} for t in chunk],
+        }
+        try:
+            d = _call("player/stats", key, body)
+        except Exception as e:
+            print(f"  stats batch {i//STATS_BATCH + 1} failed ({e}); "
+                  f"those titles will show playtime unavailable", file=sys.stderr)
+            continue
+        for coll in d.get("statlistscollection", []):
+            for s in coll.get("stats", []):
+                if s.get("name") == "MinutesPlayed" and s.get("value") is not None:
+                    try:
+                        out[str(s["titleid"])] = int(s["value"])
+                    except (KeyError, ValueError, TypeError):
+                        pass
+    return out
+
+
+def to_rows(titles, minutes_map):
     rows = []
     for t in titles:
-        # Skip non-game entries (apps, system software) when the API labels them
         if t.get("type") and t["type"] != "Game":
             continue
         hist = t.get("titleHistory") or {}
         last = (hist.get("lastTimePlayed") or "")[:10]  # ISO datetime -> YYYY-MM-DD
-
-        # Minutes played appears under different keys depending on endpoint
-        # vintage; take whatever is present, else mark it unavailable.
-        mins = 0
-        note = PLAYTIME_UNAVAILABLE
-        for source in (t, hist, t.get("stats") or {}):
-            for k in ("minutesPlayed", "minutes_played", "playTime"):
-                v = source.get(k)
-                if v not in (None, ""):
-                    try:
-                        mins = int(v)
-                        note = ""
-                    except (TypeError, ValueError):
-                        pass
+        tid = str(t.get("titleId", ""))
+        mins = minutes_map.get(tid)
         rows.append(
             {
                 "platform": "Xbox",
-                "id": t.get("titleId", ""),
+                "id": tid,
                 "name": t.get("name", "(unknown title)"),
-                "minutes": mins,
+                "minutes": mins or 0,
                 "last_played": last,
                 "genre": "",
-                "note": note,
+                "note": "" if mins is not None else PLAYTIME_UNAVAILABLE,
             }
         )
     rows.sort(key=lambda r: (-r["minutes"], r["name"].lower()))
@@ -99,7 +117,9 @@ def main():
     if a.from_json:
         with open(a.from_json) as f:
             d = json.load(f)
+        d = d.get("content", d)
         titles = d.get("titles") or d
+        minutes_map = {}
     else:
         key = os.environ.get("OPENXBL_API_KEY")
         if not key:
@@ -107,9 +127,11 @@ def main():
                 "Set OPENXBL_API_KEY first: export OPENXBL_API_KEY=...\n"
                 "Never paste the key into a chat or commit it to a repo."
             )
-        titles = title_history(key)
+        xuid, titles = title_history(key)
+        ids = [str(t["titleId"]) for t in titles if t.get("titleId")]
+        minutes_map = minutes_played(key, xuid, ids) if xuid else {}
 
-    rows = to_rows(titles)
+    rows = to_rows(titles, minutes_map)
     with open(a.out, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(
             f,
@@ -124,8 +146,6 @@ def main():
     print(f"  playtime unavailable:  {sum(1 for r in rows if r['note'] == PLAYTIME_UNAVAILABLE)}")
     if with_time:
         print(f"  total tracked hours:   {sum(r['minutes'] for r in rows) / 60:,.0f}")
-    print("Merge with other platforms by concatenating CSVs (keep one header row),")
-    print("then rebuild: python scripts/build_workbook.py merged.csv --out library.xlsx")
 
 
 if __name__ == "__main__":
