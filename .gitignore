@@ -2,7 +2,11 @@
 steamkey*
 *.rtf
 .env
+config.env
 *.key
+
+# Per-user pulls, workbooks and reports live in data/
+data/
 
 # Personal notes and per-user analysis stay out of the shippable repo
 private/

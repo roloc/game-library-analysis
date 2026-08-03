@@ -40,6 +40,16 @@ Steam,400,Portal,0,,,Playtime untracked (pre-2009)
 
 ### Scripts
 
+The whole pipeline is one command once `config.env` exists (copy
+`config.example.env`, fill in keys — it is gitignored):
+
+```bash
+python run.py             # fetch all configured platforms, merge, workbook + HTML report
+python run.py --no-fetch  # rebuild outputs from the existing data/library.csv
+```
+
+Or piece by piece:
+
 ```bash
 # Steam, straight from the API (key comes from the environment, never an argument)
 export STEAM_API_KEY=...
@@ -47,6 +57,9 @@ python scripts/fetch_steam.py --vanity <name> --out library.csv
 
 # or from JSON the user already pulled themselves
 python scripts/fetch_steam.py --from-json owned.json --out library.csv
+
+# the interactive HTML dashboard
+python scripts/build_report.py library.csv --out report.html
 
 # build the workbook
 python scripts/build_workbook.py library.csv --out library.xlsx
@@ -61,16 +74,17 @@ human opens it do you need a recalc pass — in a claude.ai session use
 
 ## Credentials
 
-Never accept, read, or store a user's API key, NPSSO, or session token, and say
-so plainly when one is offered. Steam keys and PSN NPSSO tokens are
-account-level credentials — an NPSSO is password-equivalent by Sony's own
-documentation. If the user pastes one, or points at a file containing one, tell
-them to regenerate it.
+Never accept, read, or store a user's API key, NPSSO, or session token in the
+conversation, and say so plainly when one is offered. Steam keys and PSN NPSSO
+tokens are account-level credentials — an NPSSO is password-equivalent by
+Sony's own documentation. If the user pastes one into a chat, or uploads a file
+containing one, tell them to regenerate it.
 
-The pattern that works: **they run the call, they send you the output.** Offer to
-write the script if that is the friction point. When a script needs a key, read
-it from an environment variable so it never lands in shell history, a file, or
-the conversation.
+The pattern that works: **keys live in the user's local, gitignored
+`config.env`, and the user fills that file in themselves.** You run `run.py`,
+which passes them to the fetchers through the environment — you never read,
+print, or quote the file. If there is no config file (e.g. a chat-only
+session), fall back to: they run the call, they send you the output.
 
 ## Data integrity checks
 
