@@ -31,7 +31,6 @@
   ],
   "RPG": [
     "ARMORED CORE VI",
-    "Aion Collectors Edition",
     "Avorion",
     "Baldur's Gate 3",
     "Clair Obscur: Expedition 33",
@@ -46,7 +45,6 @@
     "EVERSPACE 2",
     "Fallout 3",
     "Fallout 4",
-    "Genshin Impact",
     "GreedFall",
     "Grim Dawn",
     "Kingdom Come: Deliverance II",
@@ -69,7 +67,6 @@
     "Starpoint Gemini Warlords",
     "Tainted Grail: Fall of Avalon",
     "The Elder Scrolls IV: Oblivion Remastered",
-    "The Elder Scrolls Online",
     "The Elder Scrolls V: Skyrim",
     "The Witcher 2: Assassins of Kings EE",
     "The Witcher 3: Wild Hunt",
@@ -393,5 +390,11 @@
     "SpiderHeck",
     "Split Fiction",
     "Sportsfriends"
+  ],
+  "MMO": [
+    "Aion Collectors Edition",
+    "Genshin Impact",
+    "The Elder Scrolls Online",
+    "World of Warcraft"
   ]
 }

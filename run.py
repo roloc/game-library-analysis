@@ -95,6 +95,13 @@ def main():
             dest = os.path.join(out_dir, "psn.csv")
             run("fetch_psn.py", ["--out", dest], {"PSN_NPSSO": cfg["PSN_NPSSO"]})
             pulls.append(dest)
+        # Manual entries cover platforms with no API at all - Battle.net,
+        # Epic, GOG, EA App, hours read off a console screen. Same CSV
+        # schema; see manual.example.csv.
+        manual = os.path.join(out_dir, "manual.csv")
+        if os.path.exists(manual):
+            pulls.append(manual)
+            print(f"including manual entries from {manual}")
         if not pulls:
             sys.exit(
                 "No platform credentials found in config.env.\n"

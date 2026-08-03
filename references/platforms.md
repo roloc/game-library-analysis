@@ -85,8 +85,31 @@ account and their call. Offer the safer routes:
 - **Read it off the console.** The PS5 Game Library shows hours per title. For 30
   or 40 games, photographing the list is genuinely faster than any of this.
 
+## Battle.net
+
+No playtime API, official or reverse-engineered — Blizzard's developer API
+(develop.battle.net) exposes characters, achievements and game data, but not
+hours. The routes that exist:
+
+- **WoW: the in-game `/played` command.** Exact to the minute, per character.
+  Log each character in, type `/played`, read "Total time played". Sum across
+  characters (and across Retail/Classic, which count separately). For a
+  many-alt account this is tedious but it is the ground truth, and even
+  mains-only gives a solid lower bound. Note the output is in *days* —
+  convert before entering (1 day = 1,440 minutes).
+- **Overwatch/D4/others:** no reliable per-account hours surface. Career
+  profiles show per-hero time in-game but nothing exportable.
+- **Blizzard's GDPR data request** (account privacy settings) returns an
+  account archive after days-to-weeks; playtime coverage in it is
+  inconsistent — treat as a bonus, not a plan.
+
+Enter what you get as rows in `data/manual.csv` (schema in
+`manual.example.csv`); `run.py` merges it automatically.
+
 ## Other launchers
 
-Epic, GOG, Battle.net and the EA App have no comparable playtime export. If a
-sizeable chunk of someone's play happens there, say so as a known gap rather than
-letting the workbook imply the data is complete.
+Epic, GOG and the EA App likewise have no playtime export (Epic's GDPR data
+request sometimes includes minutes played). Use `data/manual.csv` for anything
+recovered by hand, and if a sizeable chunk of someone's play happens on a
+platform with no data, say so as a known gap rather than letting the workbook
+imply the picture is complete.

@@ -63,6 +63,10 @@ row) and rebuild — the workbook grows a Platform column automatically.
   account-ban risk (a one-shot pull is very unlikely to trip it, but the call
   is yours). `references/platforms.md` covers two zero-risk alternatives.
   PSN also only reports *played* titles, so there is no PSN backlog view.
+- **Battle.net, Epic, GOG, EA App, console-screen readings** — no APIs exist,
+  so these go in `data/manual.csv` (schema in `manual.example.csv`), which
+  `run.py` merges automatically. For WoW, the in-game `/played` command is
+  exact; see `references/platforms.md`.
 
 ## Credentials policy
 
