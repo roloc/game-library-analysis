@@ -1,1 +1,5 @@
 openpyxl>=3.1
+
+# PlayStation pulls only - safe to skip otherwise (see config.example.env
+# for the NPSSO warnings before using it)
+PSNAWP>=2.0

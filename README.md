@@ -56,11 +56,13 @@ row) and rebuild — the workbook grows a Platform column automatically.
 - **Xbox** — `scripts/fetch_xbox.py`, via a free [OpenXBL](https://xbl.io) key.
   Newest and least battle-tested fetcher; last-played dates are more reliable
   than hours on Xbox generally.
-- **PlayStation** — no script yet, deliberately. Sony has no official API, and
-  the reverse-engineered routes need an NPSSO token that is
-  password-equivalent, with a documented account-ban risk from heavy use.
-  `references/platforms.md` lays out the options, including two safer ones,
-  so you can make that call yourself.
+- **PlayStation** — `scripts/fetch_psn.py`, via the `psnawp` library
+  (`pip install PSNAWP`). **Read the warnings in `config.example.env` first:**
+  Sony has no official API, the NPSSO token this route needs is
+  password-equivalent, and heavy unofficial API use carries a documented
+  account-ban risk (a one-shot pull is very unlikely to trip it, but the call
+  is yours). `references/platforms.md` covers two zero-risk alternatives.
+  PSN also only reports *played* titles, so there is no PSN backlog view.
 
 ## Credentials policy
 

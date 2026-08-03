@@ -91,6 +91,10 @@ def main():
             dest = os.path.join(out_dir, "xbox.csv")
             run("fetch_xbox.py", ["--out", dest], {"OPENXBL_API_KEY": cfg["OPENXBL_API_KEY"]})
             pulls.append(dest)
+        if cfg.get("PSN_NPSSO"):
+            dest = os.path.join(out_dir, "psn.csv")
+            run("fetch_psn.py", ["--out", dest], {"PSN_NPSSO": cfg["PSN_NPSSO"]})
+            pulls.append(dest)
         if not pulls:
             sys.exit(
                 "No platform credentials found in config.env.\n"

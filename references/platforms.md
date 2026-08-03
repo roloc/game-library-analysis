@@ -60,7 +60,11 @@ app:
 
 - `psn-api` (JavaScript) — `getUserPlayedGames()` returns played games with
   playtime info, ordered by recency
-- `psnawp` (Python) — same surface
+- `psnawp` (Python) — same surface; `scripts/fetch_psn.py` uses this one
+
+Note the data-shape difference from Steam: PSN only reports titles actually
+*played*. Unplayed purchases never appear, so there is no PSN backlog view and
+zero-playtime analysis is Steam-only.
 
 Both authenticate with an **NPSSO** token, obtained by signing in at
 playstation.com and then visiting `ca.account.sony.com/api/v1/ssocookie`.
