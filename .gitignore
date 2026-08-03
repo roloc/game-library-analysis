@@ -1,0 +1,19 @@
+# Never commit credentials, in any form
+steamkey*
+*.rtf
+.env
+*.key
+
+# Personal notes and per-user analysis stay out of the shippable repo
+private/
+
+# Generated data and workbooks are per-user output, not source
+*.csv
+*.xlsx
+owned*.json
+titles*.json
+
+# OS / editor noise
+.DS_Store
+__pycache__/
+*.pyc

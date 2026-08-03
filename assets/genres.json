@@ -1,0 +1,139 @@
+{
+  "_comment": "Seed lookup: exact game name -> one genre bucket. The builder fills blank genre cells from this file; anything not found stays Untagged for the user (or Claude) to tag in the workbook. Grow this file as libraries pass through - it is a convenience cache, not a taxonomy. One genre per game: the point is grouping titles that scratch the same itch.",
+  "Automation": [
+    "Factorio",
+    "Satisfactory",
+    "Dyson Sphere Program",
+    "shapez",
+    "Captain of Industry",
+    "Techtonica"
+  ],
+  "Colony sim": [
+    "RimWorld",
+    "Oxygen Not Included",
+    "Against the Storm",
+    "Dwarf Fortress",
+    "Frostpunk",
+    "Frostpunk 2",
+    "Banished",
+    "Timberborn",
+    "Going Medieval",
+    "Stranded: Alien Dawn"
+  ],
+  "City & tycoon builder": [
+    "Cities: Skylines",
+    "Cities: Skylines II",
+    "SimCity 4 Deluxe",
+    "Tropico 6",
+    "Planet Coaster",
+    "Planet Zoo",
+    "Two Point Hospital",
+    "Transport Fever 2",
+    "Anno 1800",
+    "Manor Lords"
+  ],
+  "RTS & tactics": [
+    "Total War: ROME II - Emperor Edition",
+    "Total War: WARHAMMER III",
+    "Total War: MEDIEVAL II - Definitive Edition",
+    "Total War: SHOGUN 2",
+    "Age of Empires II: Definitive Edition",
+    "Age of Empires IV",
+    "StarCraft II",
+    "Company of Heroes 2",
+    "Homeworld Remastered Collection",
+    "XCOM 2",
+    "XCOM: Enemy Unknown"
+  ],
+  "Grand strategy & 4X": [
+    "Sid Meier's Civilization V",
+    "Sid Meier's Civilization VI",
+    "Sid Meier's Civilization VII",
+    "Crusader Kings III",
+    "Europa Universalis IV",
+    "Stellaris",
+    "Hearts of Iron IV",
+    "Old World",
+    "Endless Legend"
+  ],
+  "Roguelike & run-based": [
+    "Hades",
+    "Hades II",
+    "Darkest Dungeon",
+    "Darkest Dungeon II",
+    "Wildfrost",
+    "Dead Cells",
+    "Risk of Rain 2",
+    "FTL: Faster Than Light",
+    "Vampire Survivors",
+    "Balatro"
+  ],
+  "Deckbuilder": [
+    "Slay the Spire",
+    "Monster Train",
+    "Inscryption",
+    "Griftlands"
+  ],
+  "RPG": [
+    "Baldur's Gate 3",
+    "Divinity: Original Sin 2",
+    "The Witcher 3: Wild Hunt",
+    "Disco Elysium",
+    "Pillars of Eternity",
+    "Pathfinder: Wrath of the Righteous",
+    "Cyberpunk 2077",
+    "Fallout 4",
+    "The Elder Scrolls V: Skyrim Special Edition",
+    "Mass Effect Legendary Edition"
+  ],
+  "Action & souls-like": [
+    "ELDEN RING",
+    "DARK SOULS III",
+    "Sekiro: Shadows Die Twice",
+    "Lies of P",
+    "Monster Hunter: World",
+    "God of War"
+  ],
+  "Survival & crafting": [
+    "Valheim",
+    "Subnautica",
+    "Raft",
+    "Grounded",
+    "The Forest",
+    "Sons Of The Forest",
+    "V Rising",
+    "Enshrouded",
+    "Palworld",
+    "7 Days to Die"
+  ],
+  "Shooter": [
+    "DOOM",
+    "DOOM Eternal",
+    "Half-Life 2",
+    "Portal",
+    "Portal 2",
+    "BioShock",
+    "BioShock Infinite",
+    "Titanfall 2",
+    "Deep Rock Galactic",
+    "Halo: The Master Chief Collection"
+  ],
+  "Sandbox & open world": [
+    "Terraria",
+    "Stardew Valley",
+    "No Man's Sky",
+    "Kerbal Space Program",
+    "Minecraft: Java & Bedrock Edition",
+    "Red Dead Redemption 2",
+    "Grand Theft Auto V"
+  ],
+  "Puzzle & narrative": [
+    "The Witness",
+    "Outer Wilds",
+    "Return of the Obra Dinn",
+    "Baba Is You",
+    "The Talos Principle",
+    "Firewatch",
+    "What Remains of Edith Finch"
+  ]
+}
