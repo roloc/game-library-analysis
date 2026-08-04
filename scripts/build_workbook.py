@@ -18,6 +18,7 @@ hardcoded value, so editing a genre tag or a Status re-drives the Summary.
 """
 import argparse
 import csv
+import datetime
 import json
 import os
 
@@ -55,6 +56,47 @@ def header(ws, row, labels):
     for i, label in enumerate(labels, 1):
         c = ws.cell(row, i, label)
         c.font, c.fill, c.alignment = HDR, HDR_FILL, CENTER
+
+
+BOUNCE_MAX_MIN = 240
+BOUNCE_GRACE_DAYS = 180
+BOUNCE_DONE_PCT = 50
+
+
+def compute_bounces(rows):
+    """Mirror of build_report.compute_bounces: opened, briefly played, never
+    returned to - judged per game across platforms. Data-gap notes exempt."""
+    def norm(name):
+        return "".join(c for c in name.lower() if c.isalnum())
+
+    groups = {}
+    for r in rows:
+        g = groups.setdefault(norm(r["name"]), {
+            "name": r["name"], "platforms": [], "minutes": 0, "last": "",
+            "genre": "", "pct": None})
+        g["platforms"].append(r["platform"])
+        g["genre"] = g["genre"] or r.get("genre", "")
+        if not r.get("note"):
+            g["minutes"] += r["minutes"]
+            g["last"] = max(g["last"], r.get("last_played") or "")
+            if r.get("ach_pct") not in (None, ""):
+                p = float(r["ach_pct"])
+                g["pct"] = p if g["pct"] is None else max(g["pct"], p)
+        else:
+            g["unjudgeable"] = True
+
+    cutoff = (datetime.date.today()
+              - datetime.timedelta(days=BOUNCE_GRACE_DAYS)).isoformat()
+    out = []
+    for g in groups.values():
+        launched = g["minutes"] > 0 or g["last"]
+        if (g.get("unjudgeable") or not launched or g["minutes"] > BOUNCE_MAX_MIN
+                or (g["pct"] is not None and g["pct"] >= BOUNCE_DONE_PCT)
+                or (g["last"] and g["last"] > cutoff)):
+            continue
+        out.append(g)
+    out.sort(key=lambda g: g["last"], reverse=True)
+    return out
 
 
 def build(rows, genre_lookup, genre_order, out, recs=None):
@@ -192,6 +234,39 @@ def build(rows, genre_lookup, genre_order, out, recs=None):
                 rr += 1
             for col, w in zip("ABCDE", [46, 13, 9, 13, 14]):
                 cp.column_dimensions[col].width = w
+
+    # ---- Didn't click ----
+    bounced = compute_bounces(rows)
+    if bounced:
+        dc = wb.create_sheet("Didn't click")
+        dc.cell(1, 1, "What didn't click").font = Font(name=FONT, bold=True, size=14)
+        c = dc.cell(2, 1, f"Opened, briefly played (under {BOUNCE_MAX_MIN // 60}h "
+                          f"total across platforms), untouched for "
+                          f"{BOUNCE_GRACE_DAYS}+ days, and not a short game that "
+                          f"was finished. Data-gap titles are never judged.")
+        c.font, c.alignment = ITAL, WRAP
+        header(dc, 4, ["Game", "Platform", "Hours", "Last touched", "Genre",
+                       "Completion %", "Status (fill in)"])
+        rr = 5
+        for g in bounced:
+            dc.cell(rr, 1, g["name"]).font = BODY
+            dc.cell(rr, 2, "/".join(sorted(set(g["platforms"])))).font = BODY
+            c = dc.cell(rr, 3, round(g["minutes"] / 60, 1))
+            c.font, c.number_format = BODY, "0.0"
+            dc.cell(rr, 4, g["last"]).font = BODY
+            dc.cell(rr, 5, g["genre"]).font = BODY
+            if g["pct"] is not None:
+                c = dc.cell(rr, 6, g["pct"])
+                c.font, c.number_format = BODY, "0"
+            c = dc.cell(rr, 7, "")
+            c.font, c.fill = INPUT_FONT, INPUT_FILL
+            rr += 1
+        dc.freeze_panes = "A5"
+        dc.auto_filter.ref = f"A4:G{rr - 1}"
+        dc.cell(rr + 1, 1, "Status ideas: Retry someday / Wrong for me / "
+                           "Refund-regret / Gift it.").font = ITAL
+        for col, w in zip("ABCDEFG", [46, 16, 9, 13, 22, 13, 18]):
+            dc.column_dimensions[col].width = w
 
     # ---- Recommendations ----
     if recs:

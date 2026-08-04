@@ -250,6 +250,54 @@ def recs_html(recs):
 </section>"""
 
 
+BOUNCE_MAX_MIN = 240        # "briefly played" ceiling, total across platforms
+BOUNCE_GRACE_DAYS = 180     # newer than this = too early to judge
+BOUNCE_DONE_PCT = 50        # completion above this = short game finished, not a bounce
+
+
+def _norm(name):
+    return "".join(c for c in name.lower() if c.isalnum())
+
+
+def compute_bounces(rows):
+    """Games opened, briefly played, never returned to — judged per game
+    across platforms, not per store copy. Returns (bounced, too_early_count).
+    Rows with data-gap notes are never judged (their zeros are artifacts)."""
+    groups = {}
+    for r in rows:
+        g = groups.setdefault(_norm(r["name"]), {
+            "name": r["name"], "platforms": [], "minutes": 0, "last": "",
+            "genre": "", "pct": None})
+        g["platforms"].append(r["platform"])
+        g["genre"] = g["genre"] or r.get("genre", "")
+        if not r["note"]:
+            g["minutes"] += r["minutes"]
+            g["last"] = max(g["last"], r["last_played"] or "")
+            if r.get("ach_pct") not in (None, ""):
+                p = float(r["ach_pct"])
+                g["pct"] = p if g["pct"] is None else max(g["pct"], p)
+        else:
+            # a data-gap note poisons the judgement: hours exist somewhere
+            # we can't see (pre-2009 Steam, Xbox stat gaps), so never judge
+            g["unjudgeable"] = True
+
+    cutoff = (datetime.date.today()
+              - datetime.timedelta(days=BOUNCE_GRACE_DAYS)).isoformat()
+    bounced, too_early = [], 0
+    for g in groups.values():
+        launched = g["minutes"] > 0 or g["last"]
+        if g.get("unjudgeable") or not launched or g["minutes"] > BOUNCE_MAX_MIN:
+            continue
+        if g["pct"] is not None and g["pct"] >= BOUNCE_DONE_PCT:
+            continue  # short and finished - it clicked, it just ended
+        if g["last"] and g["last"] > cutoff:
+            too_early += 1
+            continue
+        bounced.append(g)
+    bounced.sort(key=lambda g: g["last"], reverse=True)
+    return bounced, too_early
+
+
 def build(rows, out_path, src_name, recs=None):
     played = [r for r in rows if r["minutes"] > 0]
     # a note on a zero-minute row means "data missing", not "never played"
@@ -322,6 +370,26 @@ def build(rows, out_path, src_name, recs=None):
         f"<td class='num'>{float(r.get('ach_pct') or 0):.0f}%</td>"
         f"<td>{'Platinum' if r.get('platinum') == 'yes' else 'Achievements'}</td></tr>"
         for r in credits_rows)
+
+    bounced, too_early = compute_bounces(rows)
+    bounce_by_genre = {}
+    for g in bounced:
+        key = g["genre"] or "Untagged"
+        bounce_by_genre[key] = bounce_by_genre.get(key, 0) + 1
+    bounce_chart = hbar_chart(
+        sorted(((genre, n, f"{n} bounced") for genre, n in bounce_by_genre.items()),
+               key=lambda t: -t[1]),
+        "--s2", lambda v: f"{v:.0f}")
+    bounce_cells = []
+    for g in bounced:
+        hours = "&lt;0.1" if g["minutes"] == 0 else f"{g['minutes'] / 60:,.1f}"
+        pct = f"{g['pct']:.0f}%" if g["pct"] is not None else ""
+        plats = "/".join(sorted(set(g["platforms"])))
+        bounce_cells.append(
+            f"<tr><td>{esc(g['name'])}</td><td>{esc(plats)}</td>"
+            f"<td class='num'>{hours}</td><td>{esc(g['last'] or '—')}</td>"
+            f"<td>{esc(g['genre'])}</td><td class='num'>{pct}</td></tr>")
+    bounce_rows = "".join(bounce_cells)
 
     backlog = stacked_chart(sorted(
         ((g, sum(1 for r in rs if r["minutes"] > 0),
@@ -448,6 +516,21 @@ titles with achievement data appear.</p>
 <div class="tablewrap"><table>
 <tr><th>Game</th><th>Platform</th><th>Hours</th><th>Completion</th><th>Signal</th></tr>
 {credits_html}</table></div>
+</section>
+
+<section><h2>What didn't click</h2>
+<p class="desc">Opened, briefly played, never went back: under
+{BOUNCE_MAX_MIN // 60} hours total <em>across all platforms</em>, untouched
+for {BOUNCE_GRACE_DAYS}+ days, and not simply a short game you finished
+(completion ≥ {BOUNCE_DONE_PCT}% is exempt). Games whose playtime data is
+missing are never judged. {too_early} recent low-hour starts are excluded as
+too early to call. The genre chart is where purchases go to die; the table
+is the full honor roll.</p>
+{bounce_chart}
+<h3>The full list ({len(bounced)})</h3>
+<div class="tablewrap"><table>
+<tr><th>Game</th><th>Platform</th><th>Hours</th><th>Last touched</th><th>Genre</th><th>Completion</th></tr>
+{bounce_rows}</table></div>
 </section>
 
 <section><h2>Backlog by genre</h2>
