@@ -161,7 +161,41 @@ def stacked_chart(items):
     return "".join(out)
 
 
-def build(rows, out_path, src_name):
+def recs_html(recs):
+    if not recs:
+        return ""
+    cards = []
+    for p in recs.get("picks", []):
+        cards.append(f"""<div class="pick">
+<div class="pick-head"><span class="pick-rank">#{p['rank']}</span>
+<span class="pick-name">{esc(p['game'])}</span>
+<span class="pick-status">{esc(p['status'])}</span></div>
+<p class="pick-why">{esc(p['why'])}</p>
+<p class="pick-ev">Evidence: {esc(p['evidence'])}</p>
+<p class="pick-watch">Watch out for: {esc(p['watch'])}</p></div>""")
+
+    def mini_table(title, items, cols):
+        if not items:
+            return ""
+        rows_html = "".join(
+            "<tr>" + "".join(f"<td>{esc(it.get(k, ''))}</td>" for k, _ in cols) + "</tr>"
+            for it in items)
+        head = "".join(f"<th>{h}</th>" for _, h in cols)
+        return (f"<h3>{esc(title)}</h3><div class='tablewrap'><table>"
+                f"<tr>{head}</tr>{rows_html}</table></div>")
+
+    return f"""<section><h2>Recommendations</h2>
+<p class="desc">{esc(recs.get('frame', ''))}</p>
+{''.join(cards)}
+{mini_table('Skip list — what the data rules out', recs.get('skips', []),
+            [('game', 'Game'), ('verdict', 'Verdict'), ('evidence', 'The evidence')])}
+{mini_table('On hold — early-access rule', recs.get('on_hold', []),
+            [('game', 'Game'), ('status', 'Status'), ('note', 'Note')])}
+<p class="desc" style="margin-top:12px">{esc(recs.get('attribution', ''))}</p>
+</section>"""
+
+
+def build(rows, out_path, src_name, recs=None):
     played = [r for r in rows if r["minutes"] > 0]
     # a note on a zero-minute row means "data missing", not "never played"
     never = [r for r in rows if r["minutes"] == 0 and not r["note"]]
@@ -281,6 +315,15 @@ svg {{ overflow: visible }}
   padding: 6px 10px; border-radius: 6px; font-size: 12.5px; max-width: 320px;
   opacity: 0; transition: opacity .08s; z-index: 9 }}
 details {{ margin-top: 6px }} summary {{ cursor: pointer; color: var(--ink2); font-size: 13.5px }}
+.pick {{ border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 10px }}
+.pick-head {{ display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap }}
+.pick-rank {{ font-weight: 700; color: var(--s1) }}
+.pick-name {{ font-weight: 650 }}
+.pick-status {{ font-size: 12px; color: var(--ink2); margin-left: auto }}
+.pick-why {{ margin-top: 6px; font-size: 14px }}
+.pick-ev {{ margin-top: 6px; font-size: 12.5px; color: var(--ink2); font-variant-numeric: tabular-nums }}
+.pick-watch {{ margin-top: 4px; font-size: 12.5px; color: var(--ink2) }}
+h3 {{ font-size: 13.5px; font-weight: 650; margin: 18px 0 4px }}
 table {{ border-collapse: collapse; width: 100%; font-size: 12.5px; margin-top: 10px }}
 th, td {{ text-align: left; padding: 4px 10px 4px 0; border-bottom: 1px solid var(--grid) }}
 th {{ color: var(--ink2); font-weight: 600 }}
@@ -293,6 +336,8 @@ td.num {{ font-variant-numeric: tabular-nums }}
  · analysis conventions: hours are the ground truth</p>
 
 <div class="tiles">{tiles}</div>
+
+{recs_html(recs)}
 
 <section><h2>Hours by genre</h2>
 <p class="desc">Where the time actually went. Untagged titles are excluded.</p>
@@ -355,9 +400,14 @@ def main():
     p.add_argument("--out", default="report.html")
     p.add_argument("--genres", default=os.path.join(
         os.path.dirname(__file__), "..", "assets", "genres.json"))
+    p.add_argument("--recs", help="recommendations JSON; renders a section")
     a = p.parse_args()
     rows = load(a.csv_path, a.genres)
-    build(rows, a.out, os.path.basename(a.csv_path))
+    recs = None
+    if a.recs and os.path.exists(a.recs):
+        with open(a.recs, encoding="utf-8") as f:
+            recs = json.load(f)
+    build(rows, a.out, os.path.basename(a.csv_path), recs)
     print(f"{len(rows)} titles -> {a.out}")
 
 

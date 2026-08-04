@@ -57,7 +57,7 @@ def header(ws, row, labels):
         c.font, c.fill, c.alignment = HDR, HDR_FILL, CENTER
 
 
-def build(rows, genre_lookup, genre_order, out):
+def build(rows, genre_lookup, genre_order, out, recs=None):
     for r in rows:
         if not r["genre"]:
             r["genre"] = genre_lookup.get(r["name"], "")
@@ -150,6 +150,58 @@ def build(rows, genre_lookup, genre_order, out):
     for col, w in zip("ABC", [46, 22, 20]):
         bl.column_dimensions[col].width = w
 
+    # ---- Recommendations ----
+    if recs:
+        rc = wb.create_sheet("Recommendations", 1)
+        rc.cell(1, 1, f"Recommendations — {recs.get('generated', '')}").font = Font(
+            name=FONT, bold=True, size=14)
+        c = rc.cell(2, 1, recs.get("frame", ""))
+        c.font, c.alignment = ITAL, WRAP
+        rc.merge_cells(start_row=2, start_column=1, end_row=2, end_column=7)
+        rc.row_dimensions[2].height = 42
+
+        row = 4
+        header(rc, row, ["Rank", "Game", "Release status", "Why it fits",
+                         "Supporting hours in your library", "Watch out for",
+                         "Status (fill in)"])
+        row += 1
+        for p in recs.get("picks", []):
+            rc.cell(row, 1, p["rank"]).font = BOLD
+            rc.cell(row, 2, p["game"]).font = BOLD
+            for col, key in ((3, "status"), (4, "why"), (5, "evidence"), (6, "watch")):
+                c = rc.cell(row, col, p.get(key, ""))
+                c.font, c.alignment = BODY, WRAP
+            c = rc.cell(row, 7, "")
+            c.font, c.fill = INPUT_FONT, INPUT_FILL
+            rc.row_dimensions[row].height = 64
+            row += 1
+
+        for title, items, cols in (
+            ("Skip list — what the data rules out", recs.get("skips", []),
+             [("game", "Game"), ("verdict", "Verdict"), ("evidence", "The evidence")]),
+            ("On hold — early-access rule", recs.get("on_hold", []),
+             [("game", "Game"), ("status", "Status"), ("note", "Note")]),
+        ):
+            if not items:
+                continue
+            row += 2
+            rc.cell(row, 1, title).font = Font(name=FONT, bold=True, size=12)
+            row += 1
+            header(rc, row, [label for _, label in cols])
+            row += 1
+            for it in items:
+                for col, (key, _) in enumerate(cols, 1):
+                    c = rc.cell(row, col, it.get(key, ""))
+                    c.font, c.alignment = BODY, WRAP
+                rc.row_dimensions[row].height = 42
+                row += 1
+
+        row += 2
+        c = rc.cell(row, 1, recs.get("attribution", ""))
+        c.font, c.alignment = ITAL, WRAP
+        for col, w in zip("ABCDEFG", [6, 26, 30, 52, 42, 52, 16]):
+            rc.column_dimensions[col].width = w
+
     # ---- Summary ----
     s = wb.create_sheet("Summary", 0)
     s.cell(1, 1, "Game Library Summary").font = Font(name=FONT, bold=True, size=14)
@@ -212,6 +264,8 @@ def main():
     p.add_argument("--out", default="library.xlsx")
     p.add_argument("--genres", default=os.path.join(
         os.path.dirname(__file__), "..", "assets", "genres.json"))
+    p.add_argument("--recs", help="recommendations JSON (see SKILL.md); "
+                                  "renders the Recommendations sheet")
     a = p.parse_args()
 
     with open(a.csv_path, encoding="utf-8") as f:
@@ -223,7 +277,11 @@ def main():
         r.setdefault("platform", "Steam")
 
     lookup, order = load_genres(a.genres)
-    total, never, untracked = build(rows, lookup, order, a.out)
+    recs = None
+    if a.recs and os.path.exists(a.recs):
+        with open(a.recs, encoding="utf-8") as f:
+            recs = json.load(f)
+    total, never, untracked = build(rows, lookup, order, a.out, recs)
     print(f"{total} titles -> {a.out}")
     print(f"  never launched: {never}   untracked pre-2009: {untracked}")
     print("All derived numbers are formulas; Excel/LibreOffice recalculate on open.")

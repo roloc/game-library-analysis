@@ -115,9 +115,11 @@ def main():
     if not os.path.exists(merged):
         sys.exit(f"{merged} does not exist - run without --no-fetch first.")
 
+    recs = os.path.join(out_dir, "recommendations.json")
+    recs_args = ["--recs", recs] if os.path.exists(recs) else []
     if not a.report_only:
-        run("build_workbook.py", [merged, "--out", workbook])
-    run("build_report.py", [merged, "--out", report])
+        run("build_workbook.py", [merged, "--out", workbook, *recs_args])
+    run("build_report.py", [merged, "--out", report, *recs_args])
     print("\nDone.")
     print(f"  workbook: {os.path.relpath(workbook, ROOT)}")
     print(f"  report:   {os.path.relpath(report, ROOT)}")
