@@ -1,7 +1,23 @@
-# The completion signal (designed, not yet built)
+# The completion signal
 
 Prompted by a review note from Steve's wife, and she's right: **hours measure
 retention, and retention only means something for games without an ending.**
+
+Status: **built** (2026-08-03). Field notes from the implementation:
+
+- **PSN is cache-first by policy.** `run.py` pulls trophies exactly once into
+  `data/psn_trophies.json` and never re-hits Sony on its own; delete the
+  cache (or run `fetch_psn.py --trophies` by hand) to refresh. Same for the
+  library pull. This was a deliberate ban-risk call by the account owner.
+- **Xbox's titleHistory achievement block often reports totalAchievements=0
+  while progressPercentage is populated.** Key everything on the percentage.
+- **Steam's GetPlayerAchievements requires the profile's base "My profile"
+  privacy = Public** — Game Details being public (enough for GetOwnedGames)
+  is not enough; the API answers 403 "Profile is not public" even to the
+  account's own key. Flip it, pull (the cache keeps it incremental), and it
+  can be flipped back.
+- Trophy titles match play-history rows by normalized name (strip ™®, case,
+  punctuation); ~80% match rate, the remainder are delisted/renamed titles.
 
 A loop game (Factorio, WoW, Total War) has no ceiling — hours are the honest
 score. A finite game (Elden Ring, God of War, Clair Obscur) has a natural

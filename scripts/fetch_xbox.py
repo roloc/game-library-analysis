@@ -93,6 +93,13 @@ def to_rows(titles, minutes_map):
         last = (hist.get("lastTimePlayed") or "")[:10]  # ISO datetime -> YYYY-MM-DD
         tid = str(t.get("titleId", ""))
         mins = minutes_map.get(tid)
+        # the titleHistory response carries achievement progress for free
+        ach = t.get("achievement") or {}
+        earned = ach.get("currentAchievements")
+        total = ach.get("totalAchievements")
+        pct = ach.get("progressPercentage")
+        if pct is None and earned is not None and total:
+            pct = round(100 * earned / total, 1)
         rows.append(
             {
                 "platform": "Xbox",
@@ -102,6 +109,10 @@ def to_rows(titles, minutes_map):
                 "last_played": last,
                 "genre": "",
                 "note": "" if mins is not None else PLAYTIME_UNAVAILABLE,
+                "ach_earned": earned if earned is not None else "",
+                "ach_total": total if total is not None else "",
+                "ach_pct": pct if pct is not None else "",
+                "platinum": "",
             }
         )
     rows.sort(key=lambda r: (-r["minutes"], r["name"].lower()))
@@ -135,7 +146,8 @@ def main():
     with open(a.out, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(
             f,
-            fieldnames=["platform", "id", "name", "minutes", "last_played", "genre", "note"],
+            fieldnames=["platform", "id", "name", "minutes", "last_played", "genre",
+                        "note", "ach_earned", "ach_total", "ach_pct", "platinum"],
         )
         w.writeheader()
         w.writerows(rows)

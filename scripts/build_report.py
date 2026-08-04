@@ -133,6 +133,61 @@ def scatter_chart(pts, y_max):
     return "".join(out)
 
 
+def quadrant_chart(pts):
+    """Completion % (x) vs hours (y, log scale). pts: (pct, hours, name,
+    platinum, genre). The chart that keeps hours honest: finished finite
+    games live bottom-right, endless loops top-left."""
+    if not pts:
+        return "<p class='empty'>No completion data.</p>"
+    import math
+    W, H, L, B, T, R = 720, 380, 52, 30, 16, 16
+    pw, ph = W - L - R, H - T - B
+    y_max = max(h for _, h, _, _, _ in pts)
+    log_max = math.log10(max(y_max, 10) * 1.3)
+
+    def X(p):
+        return L + pw * p / 100
+
+    def Y(h):
+        return T + ph * (1 - math.log10(max(h, 0.5) + 1) / log_max)
+
+    out = [f'<svg viewBox="0 0 {W} {H}" role="img" style="width:100%;height:auto">']
+    for tick in (1, 10, 100, 1000):
+        if tick > y_max * 1.3:
+            break
+        y = Y(tick)
+        out.append(f'<line x1="{L}" y1="{y:.0f}" x2="{W-R}" y2="{y:.0f}" '
+                   f'stroke="var(--grid)" stroke-width="1"/>')
+        out.append(f'<text x="{L-8}" y="{y+4:.0f}" text-anchor="end" class="tick">'
+                   f'{tick:,}h</text>')
+    for p in (0, 25, 50, 75, 100):
+        x = X(p)
+        out.append(f'<text x="{x:.0f}" y="{H-8}" text-anchor="middle" class="tick">{p}%</text>')
+    # quadrant divider at 50%
+    out.append(f'<line x1="{X(50):.0f}" y1="{T}" x2="{X(50):.0f}" y2="{T+ph}" '
+               f'stroke="var(--axis)" stroke-width="1" stroke-dasharray="4 4"/>')
+    for label, x, y, anchor in (
+            ("the loops", X(2), T + 14, "start"),
+            ("100%'d obsessions", X(98), T + 14, "end"),
+            ("sampled / early", X(2), T + ph - 8, "start"),
+            ("finished campaigns", X(98), T + ph - 8, "end")):
+        out.append(f'<text x="{x:.0f}" y="{y:.0f}" text-anchor="{anchor}" '
+                   f'class="tick" font-style="italic">{label}</text>')
+    for pct, h, name, plat, genre in pts:
+        color = "--s2" if plat else "--s1"
+        tip = (f"{name} — {pct:.0f}% complete, {h:,.0f}h"
+               + (", PLATINUM" if plat else "")
+               + (f" [{genre}]" if genre else ""))
+        out.append(
+            f'<circle cx="{X(pct):.1f}" cy="{Y(h):.1f}" r="4.5" fill="var({color})" '
+            f'fill-opacity="0.6" stroke="var(--surface)" stroke-width="1" class="mark" '
+            f'data-tip="{esc(tip)}"/>')
+    out.append(f'<line x1="{L}" y1="{T+ph}" x2="{W-R}" y2="{T+ph}" '
+               f'stroke="var(--axis)" stroke-width="1"/>')
+    out.append("</svg>")
+    return "".join(out)
+
+
 def stacked_chart(items):
     """Per genre: played vs never-launched counts. Two series, legend, 2px
     surface gap between segments."""
@@ -248,6 +303,26 @@ def build(rows, out_path, src_name, recs=None):
     y_max = max(round(y_max / 25) * 25, 25)
     recency = scatter_chart(pts, y_max)
 
+    # completion signal: only rows with real playtime AND achievement data
+    qpts = []
+    for r in played:
+        pct = r.get("ach_pct")
+        if pct not in (None, ""):
+            qpts.append((float(pct), r["minutes"] / 60, r["name"],
+                         r.get("platinum") == "yes", r.get("genre", "")))
+    quadrant = quadrant_chart(qpts)
+    credits_rows = sorted(
+        [r for r in played
+         if r.get("platinum") == "yes"
+         or (r.get("ach_pct") not in (None, "") and float(r["ach_pct"]) >= 70)],
+        key=lambda r: -float(r.get("ach_pct") or 0))
+    credits_html = "".join(
+        f"<tr><td>{esc(r['name'])}</td><td>{esc(r['platform'])}</td>"
+        f"<td class='num'>{r['minutes']/60:,.0f}</td>"
+        f"<td class='num'>{float(r.get('ach_pct') or 0):.0f}%</td>"
+        f"<td>{'Platinum' if r.get('platinum') == 'yes' else 'Achievements'}</td></tr>"
+        for r in credits_rows)
+
     backlog = stacked_chart(sorted(
         ((g, sum(1 for r in rs if r["minutes"] > 0),
           sum(1 for r in rs if r["minutes"] == 0 and not r["note"]))
@@ -360,6 +435,20 @@ hours (axis clipped; anything beyond it is pinned to the top edge and listed
 below). A dense band of low-hour dots on the right edge means sampling, not
 playing.</p>
 {recency}</section>
+
+<section><h2>The completion signal</h2>
+<p class="desc">Hours measure retention, and retention only means something
+for games without an ending. This view adds the second axis: achievement /
+trophy completion. Endless loops live top-left and are fairly measured in
+hours; <em>finished campaigns live bottom-right</em>, and they were being
+erased by every hours-only chart above. Orange = PSN platinum. Only played
+titles with achievement data appear.</p>
+{quadrant}
+<h3>Rolled credits — completed or near-completed ({len(credits_rows)})</h3>
+<div class="tablewrap"><table>
+<tr><th>Game</th><th>Platform</th><th>Hours</th><th>Completion</th><th>Signal</th></tr>
+{credits_html}</table></div>
+</section>
 
 <section><h2>Backlog by genre</h2>
 <p class="desc">Played vs never-launched, tagged genres only. Never-launched

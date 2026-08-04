@@ -23,6 +23,7 @@ Usage:
 """
 import argparse
 import csv
+import json
 import os
 import sys
 
@@ -69,9 +70,37 @@ def fetch(npsso):
     return rows
 
 
+def fetch_trophies(npsso):
+    """One pass over trophy_titles(): per-title progress %, earned/defined
+    counts, and the platinum flag. Returns a plain list for JSON caching."""
+    try:
+        from psnawp_api import PSNAWP
+    except ImportError:
+        sys.exit("psnawp is not installed. Run: pip install PSNAWP")
+
+    client = PSNAWP(npsso).me()
+    out = []
+    for t in client.trophy_titles():
+        earned = getattr(t, "earned_trophies", None)
+        defined = getattr(t, "defined_trophies", None)
+        out.append({
+            "name": (getattr(t, "title_name", "") or "").strip(),
+            "progress": getattr(t, "progress", None),
+            "platform": str(getattr(t, "title_platform", "") or ""),
+            "earned": {k: getattr(earned, k, 0) or 0
+                       for k in ("bronze", "silver", "gold", "platinum")} if earned else {},
+            "defined": {k: getattr(defined, k, 0) or 0
+                        for k in ("bronze", "silver", "gold", "platinum")} if defined else {},
+        })
+    return out
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--out", default="psn.csv")
+    p.add_argument("--trophies", metavar="JSON_PATH",
+                   help="fetch trophy progress instead of the library, and cache "
+                        "it to this JSON file (one-shot; reuse the file afterwards)")
     a = p.parse_args()
 
     npsso = os.environ.get("PSN_NPSSO")
@@ -83,6 +112,19 @@ def main():
             "Never paste the token into a chat or commit it to a repo - it is\n"
             "equivalent to your account password."
         )
+
+    if a.trophies:
+        titles = fetch_trophies(npsso)
+        if not titles:
+            sys.exit("PSN returned no trophy titles - token expired?")
+        with open(a.trophies, "w", encoding="utf-8") as f:
+            json.dump({"fetched": True, "titles": titles}, f, indent=1, ensure_ascii=False)
+        plats = sum(1 for t in titles if t["earned"].get("platinum"))
+        print(f"{len(titles)} trophy titles -> {a.trophies}")
+        print(f"  platinums: {plats}")
+        print("This file is the cache - future runs read it instead of PSN.")
+        print("Consider logging out of the browser session the NPSSO came from.")
+        return
 
     rows = fetch(npsso)
     if not rows:

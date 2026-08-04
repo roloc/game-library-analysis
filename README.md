@@ -93,13 +93,17 @@ assets/genres.json          name->genre lookup seeded from real tagged libraries
 assets/pre2009_appids.json  Steam titles that predate playtime tracking
 ```
 
-## Roadmap
+## The completion signal
 
-- **Completion signal** — hours measure retention, which lies about finite
-  games: a finished 100-hour Elden Ring run isn't "less" than an endless
-  loop game's 300 hours. Achievements/trophies (all three platforms expose
-  them) add the second axis. Design in
-  `references/completion-signal.md`.
+Hours measure retention, which lies about finite games: a finished 100-hour
+Elden Ring run isn't "less" than an endless loop game's 300 hours.
+Achievements and trophies add the second axis: the report gains a
+completion-vs-hours quadrant chart and a "rolled credits" list, the workbook
+a Completion % column and a Completed sheet. Design and field notes in
+`references/completion-signal.md`. PSN trophy data is pulled **once** and
+cached locally (`data/psn_trophies.json`) — the pipeline never re-hits
+Sony's unofficial API unless you delete the cache. Steam achievements
+require the profile's "My profile" privacy set to Public while pulling.
 
 ## The normalized CSV
 

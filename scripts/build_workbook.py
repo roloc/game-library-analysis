@@ -68,7 +68,10 @@ def build(rows, genre_lookup, genre_order, out, recs=None):
     lib = wb.active
     lib.title = "Library"
 
+    has_ach = any(r.get("ach_total") for r in rows)
     cols = ["Game", "Hours", "Minutes", "Last Played", "Genre", "Status (fill in)", "Note"]
+    if has_ach:
+        cols.insert(4, "Completion %")
     if multi:
         cols.insert(1, "Platform")
     header(lib, 1, cols)
@@ -83,6 +86,14 @@ def build(rows, genre_lookup, genre_order, out, recs=None):
         h = lib.cell(i, ix["Hours"], f"={mcol.coordinate}/60")
         h.font, h.number_format = BODY, "0.0"
         lib.cell(i, ix["Last Played"], r["last_played"]).font = BODY
+        if has_ach:
+            pct = r.get("ach_pct")
+            if pct not in (None, ""):
+                c = lib.cell(i, ix["Completion %"],
+                             float(pct) if "." in str(pct) else int(pct))
+                c.font, c.number_format = BODY, "0"
+                if r.get("platinum") == "yes":
+                    lib.cell(i, ix["Completion %"]).font = BOLD
         lib.cell(i, ix["Genre"], r["genre"]).font = BODY
         s = lib.cell(i, ix["Status (fill in)"], "")
         s.font, s.fill = INPUT_FONT, INPUT_FILL
@@ -92,7 +103,8 @@ def build(rows, genre_lookup, genre_order, out, recs=None):
     lib.freeze_panes = "A2"
     lib.auto_filter.ref = f"A1:{chr(64 + len(cols))}{last}"
     widths = {"Game": 46, "Platform": 11, "Hours": 9, "Minutes": 10,
-              "Last Played": 13, "Genre": 22, "Status (fill in)": 20, "Note": 32}
+              "Last Played": 13, "Completion %": 13, "Genre": 22,
+              "Status (fill in)": 20, "Note": 32}
     for name, i in ix.items():
         lib.column_dimensions[chr(64 + i)].width = widths[name]
     lib.cell(last + 2, 1, "Status column is yours: Loved it / Finished / Bounced / "
@@ -149,6 +161,37 @@ def build(rows, genre_lookup, genre_order, out, recs=None):
             row += 1
     for col, w in zip("ABC", [46, 22, 20]):
         bl.column_dimensions[col].width = w
+
+    # ---- Completed ----
+    # Hours measure retention, which lies about finite games. This sheet
+    # lists what was finished: PSN platinums and high achievement completion.
+    if has_ach:
+        done = [r for r in rows
+                if r.get("platinum") == "yes"
+                or (r.get("ach_pct") not in (None, "") and float(r["ach_pct"]) >= 70)]
+        done.sort(key=lambda r: -float(r.get("ach_pct") or 0))
+        if done:
+            cp = wb.create_sheet("Completed")
+            cp.cell(1, 1, "Completed / near-completed").font = Font(
+                name=FONT, bold=True, size=14)
+            cp.cell(2, 1, "Platinum trophies and titles at 70%+ achievement "
+                          "completion. A finished 60-hour campaign outranks an "
+                          "abandoned 200-hour loop here - hours only measure "
+                          "retention.").font = ITAL
+            header(cp, 4, ["Game", "Platform", "Hours", "Completion %", "Signal"])
+            rr = 5
+            for r in done:
+                cp.cell(rr, 1, r["name"]).font = BODY
+                cp.cell(rr, 2, r["platform"]).font = BODY
+                c = cp.cell(rr, 3, round(r["minutes"] / 60, 1))
+                c.font, c.number_format = BODY, "0.0"
+                c = cp.cell(rr, 4, float(r.get("ach_pct") or 0))
+                c.font, c.number_format = BODY, "0"
+                cp.cell(rr, 5, "Platinum" if r.get("platinum") == "yes"
+                        else "Achievements").font = BODY
+                rr += 1
+            for col, w in zip("ABCDE", [46, 13, 9, 13, 14]):
+                cp.column_dimensions[col].width = w
 
     # ---- Recommendations ----
     if recs:
