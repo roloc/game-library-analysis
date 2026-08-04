@@ -43,10 +43,10 @@ def load(csv_path, genres_path):
             for genre, names in json.load(f).items():
                 if not genre.startswith("_"):
                     for n in names:
-                        lookup[n] = genre
+                        lookup[_norm(n)] = genre
     for r in rows:
         r["minutes"] = int(r["minutes"] or 0)
-        r["genre"] = r.get("genre") or lookup.get(r["name"], "")
+        r["genre"] = r.get("genre") or lookup.get(_norm(r["name"]), "")
         r["note"] = r.get("note", "")
     return rows
 

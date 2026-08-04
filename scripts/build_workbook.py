@@ -39,6 +39,12 @@ WRAP = Alignment(wrap_text=True, vertical="top")
 CENTER = Alignment(horizontal="center", wrap_text=True)
 
 
+def norm_name(name):
+    """Aggressive normalization so store-page name variants (™®, casing,
+    spacing, 'Enhanced Edition' punctuation) still hit the genre cache."""
+    return "".join(c for c in name.lower() if c.isalnum())
+
+
 def load_genres(path):
     with open(path) as f:
         data = json.load(f)
@@ -48,7 +54,7 @@ def load_genres(path):
             continue
         order.append(genre)
         for n in names:
-            lookup[n] = genre
+            lookup[norm_name(n)] = genre
     return lookup, sorted(order)
 
 
@@ -102,7 +108,7 @@ def compute_bounces(rows):
 def build(rows, genre_lookup, genre_order, out, recs=None):
     for r in rows:
         if not r["genre"]:
-            r["genre"] = genre_lookup.get(r["name"], "")
+            r["genre"] = genre_lookup.get(norm_name(r["name"]), "")
     rows.sort(key=lambda r: -r["minutes"])
     multi = len({r["platform"] for r in rows}) > 1
 
