@@ -93,6 +93,14 @@ assets/genres.json          name->genre lookup seeded from real tagged libraries
 assets/pre2009_appids.json  Steam titles that predate playtime tracking
 ```
 
+## Roadmap
+
+- **Completion signal** — hours measure retention, which lies about finite
+  games: a finished 100-hour Elden Ring run isn't "less" than an endless
+  loop game's 300 hours. Achievements/trophies (all three platforms expose
+  them) add the second axis. Design in
+  `references/completion-signal.md`.
+
 ## The normalized CSV
 
 ```
