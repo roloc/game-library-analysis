@@ -40,14 +40,17 @@ PLAYED = re.compile(r'\["' + PLAYED_KEYS + r'"\]\s*=\s*(\d+)')
 LOGOUT = re.compile(r'\["lastLogoutTimestamp"\]\s*=\s*(\d+)')
 
 
+FIELD = re.compile(
+    r'\["(' + PLAYED_KEYS + r'|name|lastLogoutTimestamp)"\]\s*=\s*(?:(\d+)|"([^"]*)")')
+
+
 def parse(path):
     """Return ([(realm, name, seconds)], latest_logout_unix)."""
     text = open(path, encoding="utf-8", errors="replace").read()
     chars = []
     latest = 0
 
-    # split on character keys; the segment up to the next character key
-    # holds that character's fields (good enough for DataStore's layout)
+    # Pre-Dragonflight format: characters keyed by "Default.Realm.Name"
     marks = list(CHAR_KEY.finditer(text))
     for i, m in enumerate(marks):
         seg = text[m.end(): marks[i + 1].start() if i + 1 < len(marks) else len(text)]
@@ -58,12 +61,35 @@ def parse(path):
         if played:
             # fields are cumulative seconds; the largest is total /played
             chars.append((m.group(1), m.group(2), max(played)))
+    if chars:
+        return chars, latest
 
-    if not chars:
-        # format drifted - last resort, sum every played field in the file
-        allp = [int(x) for x in PLAYED.findall(text)]
-        if allp:
-            chars.append(("unknown", "all characters (flat scan)", sum(allp)))
+    # Modern format (DataStore_Characters_Info): a flat array of records,
+    # each with name/played/lastLogoutTimestamp in arbitrary field order.
+    # Group consecutive fields into records, flushing when a key repeats.
+    rec = {}
+    records = []
+    for m in FIELD.finditer(text):
+        key = "played" if m.group(1) in ("played", "timePlayed", "totalPlayed") \
+            else m.group(1)
+        if key in rec:
+            records.append(rec)
+            rec = {}
+        rec[key] = int(m.group(2)) if m.group(2) is not None else m.group(3)
+    if rec:
+        records.append(rec)
+    for r in records:
+        if "lastLogoutTimestamp" in r:
+            latest = max(latest, r["lastLogoutTimestamp"])
+        if isinstance(r.get("played"), int) and r["played"] > 0:
+            chars.append(("", r.get("name") or "(unnamed)", r["played"]))
+    if chars:
+        return chars, latest
+
+    # format drifted again - last resort, sum every played field in the file
+    allp = [int(x) for x in PLAYED.findall(text)]
+    if allp:
+        chars.append(("", "all characters (flat scan)", sum(allp)))
     return chars, latest
 
 
