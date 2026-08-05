@@ -26,10 +26,10 @@ import os
 # Categorical slots 1-2 only; text/chrome roles come from the same reference.
 LIGHT = dict(surface="#fcfcfb", page="#f9f9f7", ink="#0b0b0b", ink2="#52514e",
              muted="#898781", grid="#e1e0d9", axis="#c3c2b7", s1="#2a78d6",
-             s2="#eb6834", border="rgba(11,11,11,0.10)")
+             s2="#eb6834", s3="#1baf7a", border="rgba(11,11,11,0.10)")
 DARK = dict(surface="#1a1a19", page="#0d0d0d", ink="#ffffff", ink2="#c3c2b7",
             muted="#898781", grid="#2c2c2a", axis="#383835", s1="#3987e5",
-            s2="#d95926", border="rgba(255,255,255,0.10)")
+            s2="#d95926", s3="#199e70", border="rgba(255,255,255,0.10)")
 
 UNTRACKED = "Playtime untracked (pre-2009)"
 
@@ -88,8 +88,26 @@ def hbar_chart(items, color_var, value_fmt, unit=""):
     return "".join(out)
 
 
-def scatter_chart(pts, y_max):
-    """Recency scatter: [(date, hours, name)]. One series, hover per point."""
+def genre_chips(chart_id, pts_genres):
+    """Filter chips for a scatter: up to 3 genres colorable at once, top 3
+    pre-selected. pts_genres: iterable of genre strings (one per dot)."""
+    counts = {}
+    for g in pts_genres:
+        g = g or "Untagged"
+        counts[g] = counts.get(g, 0) + 1
+    chips = "".join(
+        f'<button class="chip" data-genre="{esc(g)}">{esc(g)} '
+        f'<span class="chip-n">{n}</span></button>'
+        for g, n in sorted(counts.items(), key=lambda kv: -kv[1]))
+    return (f'<div class="chips genre-filter" data-target="{chart_id}">{chips}</div>'
+            f'<p class="desc" style="margin:4px 0 10px">Pick up to three genres '
+            f'to color their dots; everything else grays out. The three biggest '
+            f'start selected.</p>')
+
+
+def scatter_chart(pts, y_max, svg_id):
+    """Recency scatter: [(date, hours, name, genre)]. Hover per point;
+    genre-colorable via chips."""
     if not pts:
         return "<p class='empty'>No dated plays.</p>"
     W, H, L, B, T, R = 720, 340, 52, 30, 12, 16
@@ -104,7 +122,7 @@ def scatter_chart(pts, y_max):
     def Y(h):
         return T + ph * (1 - min(h, y_max) / y_max)
 
-    out = [f'<svg viewBox="0 0 {W} {H}" role="img" style="width:100%;height:auto">']
+    out = [f'<svg id="{svg_id}" viewBox="0 0 {W} {H}" role="img" style="width:100%;height:auto">']
     for gy in range(5):
         y = T + ph * gy / 4
         val = y_max * (4 - gy) / 4
@@ -116,13 +134,15 @@ def scatter_chart(pts, y_max):
         x = X(datetime.date(yr, 1, 1))
         out.append(f'<text x="{x:.0f}" y="{H-8}" text-anchor="middle" class="tick">{yr}</text>')
     clipped = []
-    for d, h, name in pts:
+    for d, h, name, genre in pts:
         if h > y_max:
             clipped.append((h, name))
         out.append(
             f'<circle cx="{X(d):.1f}" cy="{Y(h):.1f}" r="4.5" fill="var(--s1)" '
             f'fill-opacity="0.55" stroke="var(--surface)" stroke-width="1" class="mark" '
-            f'data-tip="{esc(name)} — {h:,.0f}h, last played {d}"/>')
+            f'data-genre="{esc(genre or "Untagged")}" '
+            f'data-tip="{esc(name)} — {h:,.0f}h, last played {d}'
+            + (f" [{esc(genre)}]" if genre else "") + '"/>')
     out.append(f'<line x1="{L}" y1="{T+ph}" x2="{W-R}" y2="{T+ph}" '
                f'stroke="var(--axis)" stroke-width="1"/>')
     out.append("</svg>")
@@ -133,7 +153,7 @@ def scatter_chart(pts, y_max):
     return "".join(out)
 
 
-def quadrant_chart(pts):
+def quadrant_chart(pts, svg_id):
     """Completion % (x) vs hours (y, log scale). pts: (pct, hours, name,
     platinum, genre). The chart that keeps hours honest: finished finite
     games live bottom-right, endless loops top-left."""
@@ -151,7 +171,7 @@ def quadrant_chart(pts):
     def Y(h):
         return T + ph * (1 - math.log10(max(h, 0.5) + 1) / log_max)
 
-    out = [f'<svg viewBox="0 0 {W} {H}" role="img" style="width:100%;height:auto">']
+    out = [f'<svg id="{svg_id}" viewBox="0 0 {W} {H}" role="img" style="width:100%;height:auto">']
     for tick in (1, 10, 100, 1000):
         if tick > y_max * 1.3:
             break
@@ -174,14 +194,16 @@ def quadrant_chart(pts):
         out.append(f'<text x="{x:.0f}" y="{y:.0f}" text-anchor="{anchor}" '
                    f'class="tick" font-style="italic">{label}</text>')
     for pct, h, name, plat, genre in pts:
-        color = "--s2" if plat else "--s1"
         tip = (f"{name} — {pct:.0f}% complete, {h:,.0f}h"
                + (", PLATINUM" if plat else "")
                + (f" [{genre}]" if genre else ""))
+        # platinum reads as an inked ring so fill color stays free for genres
+        ring = ('stroke="var(--ink)" stroke-width="1.5" r="6"' if plat
+                else 'stroke="var(--surface)" stroke-width="1" r="4.5"')
         out.append(
-            f'<circle cx="{X(pct):.1f}" cy="{Y(h):.1f}" r="4.5" fill="var({color})" '
-            f'fill-opacity="0.6" stroke="var(--surface)" stroke-width="1" class="mark" '
-            f'data-tip="{esc(tip)}"/>')
+            f'<circle cx="{X(pct):.1f}" cy="{Y(h):.1f}" {ring} fill="var(--s1)" '
+            f'fill-opacity="0.6" class="mark" '
+            f'data-genre="{esc(genre or "Untagged")}" data-tip="{esc(tip)}"/>')
     out.append(f'<line x1="{L}" y1="{T+ph}" x2="{W-R}" y2="{T+ph}" '
                f'stroke="var(--axis)" stroke-width="1"/>')
     out.append("</svg>")
@@ -342,14 +364,15 @@ def build(rows, out_path, src_name, recs=None):
         if r["last_played"]:
             try:
                 d = datetime.date.fromisoformat(r["last_played"][:10])
-                pts.append((d, r["minutes"] / 60, r["name"]))
+                pts.append((d, r["minutes"] / 60, r["name"], r.get("genre", "")))
             except ValueError:
                 pass
     pts.sort()
-    hours_sorted = sorted((h for _, h, _ in pts), reverse=True)
+    hours_sorted = sorted((p[1] for p in pts), reverse=True)
     y_max = (hours_sorted[3] * 1.1) if len(hours_sorted) > 8 else (hours_sorted[0] if hours_sorted else 1)
     y_max = max(round(y_max / 25) * 25, 25)
-    recency = scatter_chart(pts, y_max)
+    recency = genre_chips("recency-svg", (p[3] for p in pts)) \
+        + scatter_chart(pts, y_max, "recency-svg")
 
     # completion signal: only rows with real playtime AND achievement data
     qpts = []
@@ -358,7 +381,8 @@ def build(rows, out_path, src_name, recs=None):
         if pct not in (None, ""):
             qpts.append((float(pct), r["minutes"] / 60, r["name"],
                          r.get("platinum") == "yes", r.get("genre", "")))
-    quadrant = quadrant_chart(qpts)
+    quadrant = genre_chips("quadrant-svg", (p[4] for p in qpts)) \
+        + quadrant_chart(qpts, "quadrant-svg")
     credits_rows = sorted(
         [r for r in played
          if r.get("platinum") == "yes"
@@ -451,6 +475,15 @@ svg {{ overflow: visible }}
 .tick {{ font: 11px system-ui, sans-serif; fill: var(--muted); font-variant-numeric: tabular-nums }}
 .mark {{ cursor: default }} .mark:hover {{ opacity: .85 }}
 .legend {{ display: flex; gap: 16px; font-size: 12.5px; color: var(--ink2); margin-bottom: 10px }}
+.chips {{ display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px }}
+.chip {{ font: 12px system-ui, sans-serif; color: var(--ink2); background: none;
+  border: 1px solid var(--border); border-radius: 999px; padding: 3px 10px;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 6px }}
+.chip:hover {{ border-color: var(--muted) }}
+.chip.on {{ color: var(--ink); font-weight: 600 }}
+.chip.on::before {{ content: ""; width: 9px; height: 9px; border-radius: 50%;
+  background: var(--chip-c, var(--s1)) }}
+.chip-n {{ color: var(--muted); font-variant-numeric: tabular-nums }}
 .legend span::before {{ content: ""; display: inline-block; width: 10px; height: 10px;
   border-radius: 2px; margin-right: 6px }}
 .legend .l1::before {{ background: var(--s1) }} .legend .l2::before {{ background: var(--s2) }}
@@ -549,6 +582,50 @@ already owned, evidence overwhelming. Titles whose playtime data is missing
 
 <div id="tip" role="status"></div>
 <script>
+// Genre filter: up to 3 genres colored at once (slots keep their color while
+// selected; deselecting frees the slot). Everything else drops to gray.
+const SLOTS = ['--s1', '--s2', '--s3'];
+document.querySelectorAll('.genre-filter').forEach(bar => {{
+  const svg = document.getElementById(bar.dataset.target);
+  if (!svg) return;
+  const chips = [...bar.querySelectorAll('.chip')];
+  const active = new Map();  // genre -> slot var
+  const paint = () => {{
+    svg.querySelectorAll('.mark').forEach(dot => {{
+      const slot = active.get(dot.dataset.genre);
+      if (active.size === 0) {{
+        dot.setAttribute('fill', 'var(--s1)');
+        dot.setAttribute('fill-opacity', dot.dataset.dim || '0.55');
+      }} else if (slot) {{
+        dot.setAttribute('fill', `var(${{slot}})`);
+        dot.setAttribute('fill-opacity', '0.85');
+      }} else {{
+        dot.setAttribute('fill', 'var(--muted)');
+        dot.setAttribute('fill-opacity', '0.25');
+      }}
+    }});
+    chips.forEach(ch => {{
+      const slot = active.get(ch.dataset.genre);
+      ch.classList.toggle('on', !!slot);
+      ch.style.setProperty('--chip-c', slot ? `var(${{slot}})` : '');
+    }});
+  }};
+  bar.addEventListener('click', e => {{
+    const ch = e.target.closest('.chip');
+    if (!ch) return;
+    const g = ch.dataset.genre;
+    if (active.has(g)) active.delete(g);
+    else {{
+      if (active.size >= 3) active.delete(active.keys().next().value);
+      const used = new Set(active.values());
+      active.set(g, SLOTS.find(s => !used.has(s)));
+    }}
+    paint();
+  }});
+  chips.slice(0, 3).forEach((ch, i) => active.set(ch.dataset.genre, SLOTS[i]));
+  paint();
+}});
+
 const tip = document.getElementById('tip');
 document.addEventListener('mousemove', e => {{
   const m = e.target.closest('.mark');
