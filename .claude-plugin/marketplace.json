@@ -1,0 +1,17 @@
+{
+  "name": "game-library-analysis",
+  "owner": {
+    "name": "roloc",
+    "url": "https://github.com/roloc"
+  },
+  "metadata": {
+    "description": "Game library analysis: the skill that treats your logged hours as ground truth."
+  },
+  "plugins": [
+    {
+      "name": "game-library-analysis",
+      "source": "./",
+      "description": "Analyze your play habits across Steam, Xbox, PlayStation & Battle.net — hours-grounded recommendations, completion signal, bounce detection. Your library is the ground truth."
+    }
+  ]
+}

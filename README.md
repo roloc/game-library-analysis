@@ -91,9 +91,20 @@ and the recommender's scoreboard. This repo is shaped as a
 There is nothing to wire up — no Anthropic API key goes in `config.env`. You
 use your own Claude account:
 
-- **Claude Code:** clone the repo, open the folder, and say *"read SKILL.md
-  and run the workflow for my library."* To install it as a proper skill that
-  triggers automatically on questions like "what should I play next?":
+- **Claude Code — easiest: install as a plugin** (no clone needed; the repo
+  is its own marketplace). In any Claude Code session:
+
+  ```
+  /plugin marketplace add roloc/game-library-analysis
+  /plugin install game-library-analysis@game-library-analysis
+  ```
+
+  The skill then triggers automatically on questions like "what should I
+  play next?" or "analyze my Steam library."
+
+- **Claude Code — manual:** clone the repo, open the folder, and say *"read
+  SKILL.md and run the workflow for my library"* — or symlink it as a
+  personal skill:
 
   ```bash
   ln -s "$(pwd)" ~/.claude/skills/game-library-analysis
