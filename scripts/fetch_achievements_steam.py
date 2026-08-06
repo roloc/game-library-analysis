@@ -43,13 +43,26 @@ def resolve_vanity(key, vanity):
     return r["steamid"]
 
 
+class ProfilePrivate(Exception):
+    """Steam 403s achievements when the profile's base privacy is not Public
+    - a different setting from Game Details, and it blocks even the account's
+    own API key. Distinguish it so we never cache the zeros it produces."""
+
+
 def player_achievements(key, steamid, appid):
     """Return (earned, total). (0, 0) means the app has no achievements."""
     try:
         d = _get("ISteamUserStats/GetPlayerAchievements/v1/",
                  {"key": key, "steamid": steamid, "appid": appid})
     except urllib.error.HTTPError as e:
-        # Steam answers 400/403 for apps with no stats or removed titles
+        body = ""
+        try:
+            body = e.read().decode(errors="replace")
+        except Exception:
+            pass
+        if e.code == 403 and "not public" in body.lower():
+            raise ProfilePrivate from None
+        # Steam answers 400 (and the odd 403) for apps with no stats
         if e.code in (400, 403):
             return 0, 0
         raise
@@ -93,6 +106,24 @@ def main():
         try:
             earned, total = player_achievements(key, steamid, r["id"])
             cache[str(r["id"])] = {"earned": earned, "total": total}
+        except ProfilePrivate:
+            print(
+                "\n*** Steam blocked achievement access: the profile's base "
+                "privacy is not Public. ***\n"
+                "Game Details being public is enough for the library pull, "
+                "but achievements ALSO need:\n"
+                "  Steam -> Edit Profile -> Privacy Settings -> "
+                "\"My profile\" -> Public\n"
+                "Flip it, re-run, and flip it back afterwards if you like - "
+                "the cache persists.\n"
+                "(Nothing was cached from this failed run, so a re-run "
+                "queries everything cleanly. If an OLDER run cached zeros "
+                "while the profile was private, re-run once with --refresh.)",
+                file=sys.stderr)
+            print(f"cache unchanged ({len(cache)} entries) -> {a.out}")
+            with open(a.out, "w") as f:
+                json.dump(cache, f, indent=1)
+            return
         except Exception as e:
             errors += 1
             print(f"  {r['name']}: {e}", file=sys.stderr)

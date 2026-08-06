@@ -47,6 +47,19 @@ Re-run any time to refresh; `python run.py --no-fetch` rebuilds outputs from
 the existing CSV without touching the network. The individual scripts in
 `scripts/` still run standalone if you prefer.
 
+Two things first-time runners hit:
+
+- **`run.py` produces the measurements, not the recommendations.** The
+  ranked picks / skip list / scoreboard are a judgment pass: have Claude
+  read `SKILL.md` and run the analysis — it writes
+  `data/recommendations.json`, and the next rebuild renders it. If your
+  report has no Recommendations section, that pass hasn't happened yet.
+- **Steam achievements need one extra privacy setting.** *Game details*
+  public is enough for the library, but the completion signal also needs
+  Steam → Edit Profile → Privacy Settings → **"My profile" = Public** while
+  pulling (Steam blocks achievements even to your own key without it). Flip
+  it, run, flip it back — the cache persists.
+
 ### The workbook
 
 Four sheets:

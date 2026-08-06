@@ -18,12 +18,20 @@ produce.
 
 ## Workflow
 
-1. Get the data (see `references/platforms.md` for per-platform access routes)
-2. Normalize it to the CSV schema below
-3. Run `scripts/build_workbook.py` to produce the workbook
-4. Read `references/analysis.md` and do the analysis pass
-5. Write the Recommendations sheet by hand, grounded in the numbers
-6. Recalculate, then hand over the file
+1. Get the data — `python run.py` fetches every platform configured in
+   `config.env`, merges, and builds the workbook + HTML report
+   (see `references/platforms.md` for access routes and their tradeoffs)
+2. Read `references/analysis.md` and do the analysis pass over the merged CSV
+3. **Write `data/recommendations.json`** — the hand-written judgment
+   (schema below). This step is yours, not a script's: verify release
+   statuses and known issues by web search first, cite hours in every row.
+4. Re-run `python run.py --no-fetch` — both the workbook and the report
+   render the recommendations, skip list, on-hold list, and scoreboard.
+5. Hand over both files and lead the writeup with the strongest finding.
+
+**Running the pipeline alone is not the job.** The charts are measurements;
+the recommendations are the point. A run that ends without step 3 has
+produced a dashboard, not an analysis.
 
 ### The normalized CSV
 
@@ -125,11 +133,30 @@ Full guidance in `references/analysis.md`. The short version:
   chunk of an apparent backlog from neglect to intent, and it changes which
   recommendations are even eligible.
 
-## The Recommendations sheet
+## The recommendations file
 
-Write it by hand — this is judgement, not a script. Columns:
+Write `data/recommendations.json` by hand — this is judgement, not a script.
+Both builders render it (`run.py` passes it automatically when it exists):
+the workbook gets a Recommendations sheet, the report a card section.
 
-| Rank | Game | Release status | Why it fits | Supporting hours in your library | Watch out for | Status (fill in) |
+```json
+{
+  "generated": "YYYY-MM-DD",
+  "frame": "one paragraph: how these are ranked and for what play-slot",
+  "picks":   [{"rank": 1, "game": "", "status": "release status, verified",
+               "why": "", "evidence": "the cited hours", "watch": "real known issues"}],
+  "skips":   [{"game": "", "verdict": "", "evidence": ""}],
+  "on_hold": [{"game": "", "status": "", "note": ""}],
+  "outcomes": [{"game": "", "recommended": "rank + original evidence",
+                "result": "what the next data pull showed", "verdict": "Hit/Miss"}],
+  "attribution": "who judged, when, and that hours are measured but verdicts are opinion"
+}
+```
+
+**The scoreboard keeps you honest.** When a later data pull shows a pick got
+real hours (or conspicuously didn't), move it from `picks` to `outcomes` with
+a verdict and re-rank what remains. A recommender with a public hit rate is
+the whole credibility model — record misses as plainly as hits.
 
 Rules that make it trustworthy:
 

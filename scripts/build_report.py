@@ -158,7 +158,14 @@ def quadrant_chart(pts, svg_id):
     platinum, genre). The chart that keeps hours honest: finished finite
     games live bottom-right, endless loops top-left."""
     if not pts:
-        return "<p class='empty'>No completion data.</p>"
+        return ("<p class='desc'>No completion data yet. Steam achievements "
+                "need the profile's base <em>\"My profile\"</em> privacy set "
+                "to Public while pulling — Game Details alone (enough for the "
+                "library) is not enough, and Steam blocks even your own API "
+                "key without it. Flip it, re-run <code>python run.py</code>, "
+                "and flip it back if you like; the cache persists. Xbox and "
+                "PlayStation completion data arrives automatically with "
+                "their pulls.</p>")
     import math
     W, H, L, B, T, R = 720, 380, 52, 30, 16, 16
     pw, ph = W - L - R, H - T - B
@@ -240,7 +247,16 @@ def stacked_chart(items):
 
 def recs_html(recs):
     if not recs:
-        return ""
+        # The pipeline measures; recommendations are the judgment pass.
+        # Render the absence as instructions rather than silence.
+        return """<section><h2>Recommendations</h2>
+<p class="desc">Not generated yet — and <code>run.py</code> alone never will:
+the charts above are measurements, but recommendations are a judgment pass.
+Have Claude read <code>SKILL.md</code> and run the analysis pass over your
+data — it studies the library, verifies release statuses and known issues,
+and writes <code>data/recommendations.json</code>. The next
+<code>python run.py --no-fetch</code> renders ranked picks with cited hours,
+a skip list, and a scoreboard right here.</p></section>"""
     cards = []
     for p in recs.get("picks", []):
         cards.append(f"""<div class="pick">
