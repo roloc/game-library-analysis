@@ -1,0 +1,53 @@
+{
+  "generated": "2026-08-05",
+  "frame": "SAMPLE DATA — this is what a recommendations pass looks like. Ranked by fit to logged hours, not review scores. Every pick is a game already owned with zero recorded minutes, every claim cites hours the owner can audit, and picks that get played move to the scoreboard with a verdict.",
+  "outcomes": [
+    {
+      "game": "Satisfactory",
+      "recommended": "#1 pick — Factorio 309h, owned since early access with 0 minutes",
+      "result": "117h and climbing within two months",
+      "verdict": "Hit"
+    }
+  ],
+  "picks": [
+    {
+      "rank": 1,
+      "game": "Timberborn",
+      "status": "Released — 1.0 July 2025",
+      "why": "City builder meets colony sim, and both buckets rank in this library's top four by hours-per-launched-game.",
+      "evidence": "Cities: Skylines 104h; RimWorld 206h; Timberborn owned, 0 minutes",
+      "watch": "Water physics update split the community on difficulty; start on default settings."
+    },
+    {
+      "rank": 2,
+      "game": "Hollow Knight",
+      "status": "Released — 2017, complete",
+      "why": "The best-reviewed unplayed game in the library, and Ori's 55% Xbox completion says metroidvanias land when started.",
+      "evidence": "Ori and the Will of the Wisps 55% completion; Hollow Knight owned, 0 minutes",
+      "watch": "Famously oblique early hours — give it until the second boss before judging."
+    },
+    {
+      "rank": 3,
+      "game": "Slipways",
+      "status": "Released — 2021, complete",
+      "why": "Civ VI has 131h but Hearts of Iron got 3.7h — turn-based empire optimization in bounded sessions is the real pattern, and Slipways is a 4X in 90-minute runs.",
+      "evidence": "Civ VI 131h vs Hearts of Iron IV 3.7h; Slipways owned, 0 minutes",
+      "watch": "Abstract and puzzle-like; fans converge around ~30 great hours."
+    }
+  ],
+  "skips": [
+    {
+      "game": "The Binding of Isaac: Rebirth",
+      "verdict": "Skip more roguelike bullet-hells",
+      "evidence": "1.6h and 0.8% completion here, Vampire Survivors 2.5h — run-based games stick in this library only when they carry an economy layer (Against the Storm 42h, Balatro 33h)."
+    }
+  ],
+  "on_hold": [
+    {
+      "game": "Manor Lords",
+      "status": "Still early access",
+      "note": "Owner's rule: buy early access to support it, play at 1.0."
+    }
+  ],
+  "attribution": "Sample analysis over synthetic data. Hours are 'measured'; verdicts are opinion. See SKILL.md for the method."
+}

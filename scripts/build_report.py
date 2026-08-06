@@ -545,8 +545,8 @@ playing.</p>
 for games without an ending. This view adds the second axis: achievement /
 trophy completion. Endless loops live top-left and are fairly measured in
 hours; <em>finished campaigns live bottom-right</em>, and they were being
-erased by every hours-only chart above. Orange = PSN platinum. Only played
-titles with achievement data appear.</p>
+erased by every hours-only chart above. A ringed dot is a PSN platinum. Only
+played titles with achievement data appear.</p>
 {quadrant}
 <h3>Rolled credits — completed or near-completed ({len(credits_rows)})</h3>
 <div class="tablewrap"><table>

@@ -1,13 +1,26 @@
 # Game Library Analysis
 
-Pull your gaming library — Steam, Xbox, PlayStation — into one Excel workbook,
-then get "what should I play next" recommendations grounded in the hours you
-actually logged, not review scores.
+Pull your gaming library — Steam, Xbox, PlayStation, and the launchers with no
+API at all — into one interactive report and Excel workbook, then get "what
+should I play next" recommendations grounded in the hours you actually logged,
+not review scores.
 
 The premise: **people are unreliable narrators of their own taste.** You'll say
 you love roguelikes when one outlier carries 90% of the genre's hours. Your
 library is the ground truth. This project leads with it — including a skip list
-of games your own data quietly rules out.
+of games your own data quietly rules out, a completion axis so finished
+campaigns aren't erased by endless loops, and a scoreboard where the
+recommender's own hit rate is public.
+
+![Report overview](docs/screenshots/overview-dark.png)
+
+*All screenshots show the bundled [sample dataset](examples/sample-library.csv);
+open the full [sample report](examples/sample-report.html) in a browser to click
+around. Light mode included:*
+
+| The completion quadrant | What didn't click |
+| --- | --- |
+| ![Completion quadrant](docs/screenshots/quadrant-dark.png) | ![Bounce detection](docs/screenshots/bounces-dark.png) |
 
 This repo is packaged as a [Claude skill](https://docs.claude.com/en/docs/agents-and-tools/agent-skills):
 point Claude at it (or install it) and `SKILL.md` drives the workflow. The
@@ -104,6 +117,19 @@ a Completion % column and a Completed sheet. Design and field notes in
 cached locally (`data/psn_trophies.json`) — the pipeline never re-hits
 Sony's unofficial API unless you delete the cache. Steam achievements
 require the profile's "My profile" privacy set to Public while pulling.
+
+## Buy me a game 🎮
+
+If this told you something true about your own taste (or found your next
+300-hour game in the pile you already own), you can say thanks:
+
+<!-- Swap in real links once accounts exist:
+[**Ko-fi — buy me a game**](https://ko-fi.com/YOUR_KOFI_NAME) ·
+[GitHub Sponsors](https://github.com/sponsors/roloc)
+-->
+*Donation links coming soon.*
+
+No paywall, no telemetry, your data never leaves your machine either way.
 
 ## The normalized CSV
 
