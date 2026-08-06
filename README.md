@@ -61,6 +61,32 @@ Four sheets:
 Yellow-filled, blue-font cells are yours to fill in; the Summary formulas
 follow your edits.
 
+## Using it with Claude (the analyst half)
+
+The pipeline above is plain Python — no AI account needed for the data pull,
+workbook, or dashboard. Claude is the *judgment layer*: the analysis pass,
+recommendations with auditable hour citations, the skip list, genre tagging,
+and the recommender's scoreboard. This repo is shaped as a
+[Claude skill](https://docs.claude.com/en/docs/agents-and-tools/agent-skills):
+`SKILL.md` is the methodology, `references/` the domain knowledge.
+
+There is nothing to wire up — no Anthropic API key goes in `config.env`. You
+use your own Claude account:
+
+- **Claude Code:** clone the repo, open the folder, and say *"read SKILL.md
+  and run the workflow for my library."* To install it as a proper skill that
+  triggers automatically on questions like "what should I play next?":
+
+  ```bash
+  ln -s "$(pwd)" ~/.claude/skills/game-library-analysis
+  ```
+
+- **claude.ai:** add `SKILL.md` and the `references/` files to a Project and
+  chat. (That's how this project started.)
+
+Claude usage bills to your own plan; the scripts never call any AI API
+themselves.
+
 ## Adding platforms
 
 Each fetcher writes the same normalized CSV. Concatenate them (keep one header
