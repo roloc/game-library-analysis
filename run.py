@@ -20,6 +20,97 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 SCRIPTS = os.path.join(ROOT, "scripts")
 
 
+def setup_wizard(path):
+    """Interactive first-run setup. Only runs on a real terminal - keys are
+    typed locally into the gitignored config.env, never pasted into a chat."""
+    from getpass import getpass
+
+    def ask(prompt):
+        try:
+            return input(prompt).strip()
+        except EOFError:
+            return ""
+
+    def ask_secret(prompt):
+        try:
+            return getpass(prompt).strip()
+        except EOFError:
+            return ""
+
+    print(
+        "\nNo config.env found - let's set one up. Everything you enter stays\n"
+        "in config.env on this machine (it is gitignored). Press Enter to\n"
+        "skip any platform; you can re-run this anytime with:  python run.py --setup\n")
+
+    print("=" * 62)
+    print("STEAM")
+    print("=" * 62)
+    print(
+        "Two privacy settings matter, and people routinely miss them because\n"
+        "their own logged-in view always looks public:\n\n"
+        "  Steam -> Edit Profile -> Privacy Settings:\n"
+        "    1. 'Game details' = Public, AND uncheck 'Always keep my total\n"
+        "       playtime private' - required for the library pull.\n"
+        "    2. 'My profile' = Public - required ONLY for the achievement /\n"
+        "       completion signal. You can flip this one back after the first\n"
+        "       pull; the local cache persists.\n\n"
+        "Free API key (sign in, any domain works): "
+        "https://steamcommunity.com/dev/apikey\n")
+    steam_key = ask_secret("Steam API key (input hidden; Enter to skip Steam): ")
+    steam_vanity = ""
+    steam_id = ""
+    if steam_key:
+        steam_vanity = ask("Vanity name (the bit after steamcommunity.com/id/): ")
+        if not steam_vanity:
+            steam_id = ask("No vanity name? Paste your 64-bit SteamID instead: ")
+
+    print("\n" + "=" * 62)
+    print("XBOX (optional)")
+    print("=" * 62)
+    print("Free key: sign in at https://xbl.io with the Microsoft account\n"
+          "to analyze, and copy the API key from the profile page.\n")
+    xbox_key = ask_secret("OpenXBL API key (input hidden; Enter to skip Xbox): ")
+
+    print("\n" + "=" * 62)
+    print("PLAYSTATION (optional - read this part)")
+    print("=" * 62)
+    print(
+        "Sony has no official API. The token this uses (NPSSO) is\n"
+        "PASSWORD-EQUIVALENT for your PSN account, and heavy unofficial API\n"
+        "use carries a documented account-ban risk. This tool pulls ONCE and\n"
+        "caches locally - it never re-hits Sony on its own - but the risk\n"
+        "call is yours. Safer alternatives are in references/platforms.md.\n\n"
+        "If proceeding: sign in at playstation.com in a browser, then visit\n"
+        "  https://ca.account.sony.com/api/v1/ssocookie\n"
+        "and copy the npsso value. Log out of that browser session after the\n"
+        "pull completes - that invalidates the token.\n")
+    psn_token = ask_secret("NPSSO token (input hidden; Enter to skip PlayStation): ")
+
+    lines = [
+        "# Written by run.py --setup. Gitignored - keys stay on this machine.",
+        "",
+        f"STEAM_API_KEY={steam_key}",
+        f"STEAM_VANITY={steam_vanity}",
+        f"STEAM_ID={steam_id}",
+        f"OPENXBL_API_KEY={xbox_key}",
+        f"PSN_NPSSO={psn_token}",
+        "",
+        "OUT_DIR=data",
+        "WORKBOOK=data/library.xlsx",
+        "REPORT=data/report.html",
+        "",
+    ]
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as f:
+        f.write("\n".join(lines))
+    configured = [n for n, v in (("Steam", steam_key), ("Xbox", xbox_key),
+                                 ("PlayStation", psn_token)) if v]
+    print(f"\nWrote {path} ({', '.join(configured) if configured else 'nothing configured'}).")
+    if not configured:
+        sys.exit("No platforms configured - re-run with --setup when ready.")
+    print("Starting the pull...\n")
+
+
 def load_config(path):
     cfg = {}
     if not os.path.exists(path):
@@ -116,7 +207,24 @@ def main():
                    help="skip the network; rebuild from the existing merged CSV")
     p.add_argument("--report-only", action="store_true",
                    help="only regenerate the HTML report")
+    p.add_argument("--setup", action="store_true",
+                   help="(re)run the interactive setup wizard")
     a = p.parse_args()
+
+    if a.setup or (not os.path.exists(a.config) and not a.no_fetch
+                   and not a.report_only):
+        if sys.stdin.isatty():
+            setup_wizard(a.config)
+        elif not os.path.exists(a.config):
+            sys.exit(
+                "No config.env found. Either:\n"
+                "  - run  python run.py  in an interactive terminal for a "
+                "guided setup (it walks through keys AND the Steam privacy "
+                "settings), or\n"
+                "  - copy config.example.env to config.env and fill it in.\n"
+                "Keys belong in that gitignored file - never paste them into "
+                "a chat."
+            )
 
     cfg = load_config(a.config)
     out_dir = os.path.join(ROOT, cfg.get("OUT_DIR", "data"))

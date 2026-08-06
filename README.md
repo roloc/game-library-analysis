@@ -30,9 +30,14 @@ scripts also run standalone.
 
 ```bash
 pip install -r requirements.txt
-cp config.example.env config.env   # fill in your key(s) - config.env is gitignored
-python run.py
+python run.py     # no config yet? it walks you through setup interactively
 ```
+
+The first run launches a guided setup: which platforms you want, where each
+key comes from, and the Steam privacy settings that trip everyone up — keys
+are typed locally into the gitignored `config.env`, and you can re-run it
+anytime with `python run.py --setup`. (Prefer files? `cp config.example.env
+config.env` and fill it in yourself.)
 
 `run.py` fetches every platform you gave it credentials for, merges them into
 one normalized CSV, and produces two outputs in `data/`:

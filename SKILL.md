@@ -80,6 +80,32 @@ human opens it do you need a recalc pass — in a claude.ai session use
 `python /mnt/skills/public/xlsx/scripts/recalc.py library.xlsx`; elsewhere,
 `soffice --headless --convert-to xlsx` or simply opening and saving in Excel.
 
+## Onboarding a new user
+
+When `config.env` does not exist, don't just report that the pipeline can't
+run — walk them through hookup:
+
+1. **Point them at the wizard.** `python run.py` in their own interactive
+   terminal walks through every platform: key URLs, what to click, and it
+   writes `config.env` itself. Keys get typed locally, never into the chat.
+   (Non-interactive runs print instructions instead of hanging.)
+2. **Front-load the Steam privacy settings** — this is the #1 first-run
+   failure and it costs a whole retry cycle if discovered late. Before the
+   first pull, tell them plainly:
+   - *Game details* = Public + untick "keep my total playtime private"
+     (required for the library at all), and
+   - *"My profile"* = Public (required only for the achievement /
+     completion signal; Steam 403s it even against their own key, and they
+     can revert it right after the pull — the cache persists).
+3. **Let them make the PlayStation call.** Surface the NPSSO
+   password-equivalence and ban-risk warnings from `references/platforms.md`
+   yourself — don't let the wizard text be the only place they could have
+   seen them. Remind them the pull is one-shot and cached.
+4. After the first successful run, check the report for the two teach-state
+   sections (empty completion signal, missing recommendations) and resolve
+   them: the first is usually the privacy setting, the second is your
+   analysis pass — which is the actual job.
+
 ## Credentials
 
 Never accept, read, or store a user's API key, NPSSO, or session token in the

@@ -101,25 +101,40 @@ def main():
     todo = [r for r in played if str(r["id"]) not in cache]
     print(f"{len(played)} played Steam games; {len(todo)} to query "
           f"({len(played) - len(todo)} cached)")
+    PRIVACY_MSG = (
+        "\n*** Steam blocked achievement access: the profile's base privacy "
+        "is not Public. ***\n"
+        "Game Details being public is enough for the library pull, but "
+        "achievements ALSO need:\n"
+        "  Steam -> Edit Profile -> Privacy Settings -> \"My profile\" -> "
+        "Public\n"
+        "(You can flip it back after the pull - the local cache persists.)")
+
     errors = 0
-    for i, r in enumerate(todo, 1):
+    privacy_retries = 0
+    i = 0
+    done = 0
+    while i < len(todo):
+        r = todo[i]
         try:
             earned, total = player_achievements(key, steamid, r["id"])
             cache[str(r["id"])] = {"earned": earned, "total": total}
         except ProfilePrivate:
-            print(
-                "\n*** Steam blocked achievement access: the profile's base "
-                "privacy is not Public. ***\n"
-                "Game Details being public is enough for the library pull, "
-                "but achievements ALSO need:\n"
-                "  Steam -> Edit Profile -> Privacy Settings -> "
-                "\"My profile\" -> Public\n"
-                "Flip it, re-run, and flip it back afterwards if you like - "
-                "the cache persists.\n"
-                "(Nothing was cached from this failed run, so a re-run "
-                "queries everything cleanly. If an OLDER run cached zeros "
-                "while the profile was private, re-run once with --refresh.)",
-                file=sys.stderr)
+            print(PRIVACY_MSG, file=sys.stderr)
+            if sys.stdin.isatty() and privacy_retries < 5:
+                privacy_retries += 1
+                resp = input(
+                    "\nFlip the setting now, then press Enter to retry - or "
+                    "type 'skip' to continue without achievements: ").strip()
+                if not resp.lower().startswith("s"):
+                    time.sleep(1)
+                    continue  # retry the same game
+            else:
+                print(
+                    "(Nothing was cached from this failed run, so the next "
+                    "run queries everything cleanly. If an OLDER run cached "
+                    "zeros while the profile was private, re-run once with "
+                    "--refresh.)", file=sys.stderr)
             print(f"cache unchanged ({len(cache)} entries) -> {a.out}")
             with open(a.out, "w") as f:
                 json.dump(cache, f, indent=1)
@@ -131,8 +146,12 @@ def main():
                 print("Too many errors; writing partial cache and stopping.",
                       file=sys.stderr)
                 break
-        if i % 25 == 0:
-            print(f"  {i}/{len(todo)}...")
+            i += 1
+            continue
+        i += 1
+        done += 1
+        if done % 25 == 0:
+            print(f"  {done}/{len(todo)}...")
         time.sleep(THROTTLE_S)
 
     with open(a.out, "w") as f:
