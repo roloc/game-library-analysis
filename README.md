@@ -123,11 +123,9 @@ require the profile's "My profile" privacy set to Public while pulling.
 If this told you something true about your own taste (or found your next
 300-hour game in the pile you already own), you can say thanks:
 
-<!-- Swap in real links once accounts exist:
-[**Ko-fi — buy me a game**](https://ko-fi.com/YOUR_KOFI_NAME) ·
-[GitHub Sponsors](https://github.com/sponsors/roloc)
--->
-*Donation links coming soon.*
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-buy_me_a_game_%F0%9F%8E%AE-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/roloc59)
+
+**[ko-fi.com/roloc59](https://ko-fi.com/roloc59)**
 
 No paywall, no telemetry, your data never leaves your machine either way.
 
