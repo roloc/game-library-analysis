@@ -263,6 +263,9 @@ def recs_html(recs):
 
     return f"""<section><h2>Recommendations</h2>
 <p class="desc">{esc(recs.get('frame', ''))}</p>
+{mini_table('Scoreboard — picks that got played', recs.get('outcomes', []),
+            [('game', 'Game'), ('recommended', 'The pick'), ('result', 'What happened'),
+             ('verdict', 'Verdict')])}
 {''.join(cards)}
 {mini_table('Skip list — what the data rules out', recs.get('skips', []),
             [('game', 'Game'), ('verdict', 'Verdict'), ('evidence', 'The evidence')])}

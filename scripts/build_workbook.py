@@ -301,6 +301,9 @@ def build(rows, genre_lookup, genre_order, out, recs=None):
             row += 1
 
         for title, items, cols in (
+            ("Scoreboard — picks that got played", recs.get("outcomes", []),
+             [("game", "Game"), ("recommended", "The pick"),
+              ("result", "What happened"), ("verdict", "Verdict")]),
             ("Skip list — what the data rules out", recs.get("skips", []),
              [("game", "Game"), ("verdict", "Verdict"), ("evidence", "The evidence")]),
             ("On hold — early-access rule", recs.get("on_hold", []),
