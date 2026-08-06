@@ -223,7 +223,14 @@ def main():
                 "settings), or\n"
                 "  - copy config.example.env to config.env and fill it in.\n"
                 "Keys belong in that gitignored file - never paste them into "
-                "a chat."
+                "a chat.\n"
+                "\n"
+                "AI assistants running this for a user without a terminal: "
+                "don't just relay this message - CREATE config.env yourself "
+                "from config.example.env (values left blank), tell the user "
+                "to open it in an editor and fill in their keys, walk them "
+                "through the Steam privacy settings in the example file's "
+                "comments, then re-run. Never ask for keys in the chat."
             )
 
     cfg = load_config(a.config)

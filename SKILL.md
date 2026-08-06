@@ -85,10 +85,17 @@ human opens it do you need a recalc pass — in a claude.ai session use
 When `config.env` does not exist, don't just report that the pipeline can't
 run — walk them through hookup:
 
-1. **Point them at the wizard.** `python run.py` in their own interactive
-   terminal walks through every platform: key URLs, what to click, and it
-   writes `config.env` itself. Keys get typed locally, never into the chat.
-   (Non-interactive runs print instructions instead of hanging.)
+1. **Set up `config.env` for them — pick the path by surface:**
+   - *User has a terminal (Claude Code CLI):* point them at the wizard —
+     `python run.py` walks through every platform interactively and writes
+     `config.env` itself. Keys get typed locally, never into the chat.
+   - *User has no terminal (Cowork, claude.ai, desktop app):* **create
+     `config.env` yourself** — copy `config.example.env` to `config.env`
+     with the values left blank, then tell the user to open that file in
+     any editor, paste their keys in, and say "done". Do not just tell
+     them to create the file; that's your job. Never ask for a key in
+     chat, and never read the file back — verify by re-running the
+     pipeline, which reports which platforms are configured.
 2. **Front-load the Steam privacy settings** — this is the #1 first-run
    failure and it costs a whole retry cycle if discovered late. Before the
    first pull, tell them plainly:
