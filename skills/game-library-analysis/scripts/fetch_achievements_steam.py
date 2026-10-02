@@ -7,7 +7,7 @@ The key comes from STEAM_API_KEY in the environment, same as fetch_steam.py.
 
 Usage:
     export STEAM_API_KEY=...
-    python fetch_achievements_steam.py --vanity roloc59 --library data/steam.csv \\
+    python fetch_achievements_steam.py --vanity <name> --library data/steam.csv \\
         --out data/achievements_steam.json
 
 The cache maps appid -> {"earned": n, "total": n} and is reused by run.py's
