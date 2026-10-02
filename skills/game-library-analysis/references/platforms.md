@@ -104,7 +104,7 @@ hours. The routes that exist:
   inconsistent — treat as a bonus, not a plan.
 
 Enter what you get as rows in `data/manual.csv` (schema in
-`manual.example.csv`); `run.py` merges it automatically.
+`assets/manual.example.csv`); `run.py` merges it automatically.
 
 ## Other launchers
 

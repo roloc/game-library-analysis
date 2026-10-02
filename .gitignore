@@ -14,6 +14,9 @@ private/
 # Generated data and workbooks are per-user output, not source
 *.csv
 *.xlsx
+# ...except the bundled synthetic sample and the manual-entry template
+!examples/sample-library.csv
+!skills/game-library-analysis/assets/manual.example.csv
 owned*.json
 titles*.json
 

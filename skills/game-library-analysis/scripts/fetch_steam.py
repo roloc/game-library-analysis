@@ -7,7 +7,7 @@ https://steamcommunity.com/dev/apikey
 
 Usage:
     export STEAM_API_KEY=...
-    python fetch_steam.py --vanity roloc59 --out library.csv
+    python fetch_steam.py --vanity <name> --out library.csv
     python fetch_steam.py --steamid 7656119... --out library.csv
 
 If you already have the raw JSON (pasted from a browser, saved from a previous

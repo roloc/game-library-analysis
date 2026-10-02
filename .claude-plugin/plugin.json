@@ -1,7 +1,8 @@
 {
   "name": "game-library-analysis",
+  "displayName": "Game Library Analysis",
   "description": "Analyze your play habits across Steam, Xbox, PlayStation & Battle.net — hours-grounded recommendations, completion signal, bounce detection. Your library is the ground truth.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": {
     "name": "roloc",
     "url": "https://github.com/roloc"
@@ -9,5 +10,13 @@
   "homepage": "https://github.com/roloc/game-library-analysis",
   "repository": "https://github.com/roloc/game-library-analysis",
   "license": "MIT",
-  "keywords": ["gaming", "steam", "playstation", "xbox", "backlog", "data-analysis"]
+  "keywords": [
+    "gaming",
+    "steam",
+    "playstation",
+    "xbox",
+    "backlog",
+    "data-analysis"
+  ],
+  "icon": "./icon.svg"
 }

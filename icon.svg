@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Game Library Analysis">
+  <rect width="512" height="512" rx="112" fill="#14182b"/>
+  <!-- gamepad body -->
+  <g fill="#e9ecf5">
+    <rect x="72" y="168" width="368" height="156" rx="78"/>
+    <circle cx="140" cy="304" r="68"/>
+    <circle cx="372" cy="304" r="68"/>
+  </g>
+  <!-- d-pad -->
+  <g fill="#14182b">
+    <rect x="130" y="212" width="24" height="76" rx="6"/>
+    <rect x="104" y="238" width="76" height="24" rx="6"/>
+  </g>
+  <!-- face buttons, drawn as the hours chart -->
+  <rect x="300" y="256" width="26" height="40" rx="6" fill="#38bdf8"/>
+  <rect x="336" y="232" width="26" height="64" rx="6" fill="#34d399"/>
+  <rect x="372" y="206" width="26" height="90" rx="6" fill="#f59e0b"/>
+</svg>
