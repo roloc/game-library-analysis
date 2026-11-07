@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Pull a Steam library into the normalized CSV this skill's builder expects.
 
 The API key is read from the STEAM_API_KEY environment variable and is never

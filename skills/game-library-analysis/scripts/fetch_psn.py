@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Pull a PlayStation library via the psnawp library into the normalized CSV.
 
 READ BEFORE USING (see references/platforms.md for the full picture):

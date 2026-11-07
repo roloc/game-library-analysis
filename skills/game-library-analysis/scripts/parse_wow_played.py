@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Extract per-character /played time from WoW SavedVariables written by the
 DataStore/Altoholic addon family, and turn it into a manual.csv row.
 

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Turn a normalized library CSV into the analysis workbook.
 
 Input CSV columns: platform, id, name, minutes, last_played, genre, note

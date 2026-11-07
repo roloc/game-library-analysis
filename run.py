@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Entry point for a cloned checkout: `python run.py` from the repository root.
 
 The pipeline itself lives with the skill, in

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Turn a normalized library CSV into a self-contained interactive HTML report.
 
     python build_report.py data/library.csv --out data/report.html

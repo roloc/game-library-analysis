@@ -15,8 +15,11 @@ recommender's own hit rate is public.
 ![Report overview](docs/screenshots/overview-dark.png)
 
 *All screenshots show the bundled [sample dataset](examples/sample-library.csv);
-open the full [sample report](examples/sample-report.html) in a browser to click
-around. Light mode included:*
+build the full interactive sample report with one command and click around:
+
+```bash
+python skills/game-library-analysis/scripts/build_report.py examples/sample-library.csv --recs examples/sample-recommendations.json --out sample-report.html
+``` Light mode included:*
 
 | The completion quadrant | What didn't click |
 | --- | --- |
@@ -52,7 +55,7 @@ Once the skill is installed, these all trigger it:
 ## Quick start
 
 ```bash
-pip install -r requirements.txt
+pip install openpyxl   # add PSNAWP only if you'll pull PlayStation
 python run.py     # no config yet? it walks you through setup interactively
 ```
 
