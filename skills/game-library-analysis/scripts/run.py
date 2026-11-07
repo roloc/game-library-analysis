@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """One-command pipeline: fetch every platform with credentials in config.env,
 merge into one normalized CSV, build the Excel workbook and the HTML report.
 

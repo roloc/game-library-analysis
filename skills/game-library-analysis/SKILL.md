@@ -44,7 +44,8 @@ produced a dashboard, not an analysis.
   report, `recommendations.json`). Run the pipeline *from* the folder the
   user wants those in — an installed plugin's own folder is replaced on every
   update.
-- **Dependencies:** `pip install -r ${CLAUDE_SKILL_DIR}/requirements.txt`
+- **Dependencies:** `pip install openpyxl` (add `PSNAWP` only if doing a
+  PlayStation pull; nothing else is needed)
   once (openpyxl; PSNAWP is only needed for PlayStation).
 
 ### The normalized CSV

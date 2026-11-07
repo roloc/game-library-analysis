@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Pull an Xbox library via OpenXBL (xbl.io) into the normalized CSV.
 
 The API key is read from the OPENXBL_API_KEY environment variable and is never

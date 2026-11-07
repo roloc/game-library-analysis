@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Pull per-game Steam achievement progress into a local JSON cache.
 
 One GetPlayerAchievements call per played game (unplayed games are 0% by
