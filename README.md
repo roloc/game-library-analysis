@@ -18,7 +18,7 @@ recommender's own hit rate is public.
 build the full interactive sample report with one command and click around:
 
 ```bash
-python skills/game-library-analysis/scripts/build_report.py examples/sample-library.csv --recs examples/sample-recommendations.json --out sample-report.html
+python -m game_library_analysis.build_report examples/sample-library.csv --recs examples/sample-recommendations.json --out sample-report.html
 ``` Light mode included:*
 
 | The completion quadrant | What didn't click |
@@ -27,8 +27,10 @@ python skills/game-library-analysis/scripts/build_report.py examples/sample-libr
 
 This repo is a Claude plugin with one [skill](https://docs.claude.com/en/docs/agents-and-tools/agent-skills):
 install it (or point Claude at the folder) and
-[`SKILL.md`](skills/game-library-analysis/SKILL.md) drives the workflow. The scripts also run
-standalone, with no AI account at all.
+[`SKILL.md`](skills/game-library-analysis/SKILL.md) drives the workflow. The pipeline itself is a
+plain Python package — [`game-library-analysis` on PyPI](https://pypi.org/project/game-library-analysis/),
+source at [roloc/game-library-pipeline](https://github.com/roloc/game-library-pipeline) —
+and runs standalone, with no AI account at all.
 
 ## What you can ask
 
@@ -55,18 +57,18 @@ Once the skill is installed, these all trigger it:
 ## Quick start
 
 ```bash
-pip install openpyxl   # add PSNAWP only if you'll pull PlayStation
-python run.py     # no config yet? it walks you through setup interactively
+pip install game-library-analysis   # or 'game-library-analysis[psn]' for PlayStation
+game-library     # no config yet? it walks you through setup interactively
 ```
 
 The first run launches a guided setup: which platforms you want, where each
 key comes from, and the Steam privacy settings that trip everyone up — keys
-are typed locally into the gitignored `config.env`, and you can re-run it
-anytime with `python run.py --setup`. (Prefer files? `cp
+are typed locally into `config.env` in the folder you run from, and you can
+re-run it anytime with `game-library --setup`. (Prefer files? `cp
 skills/game-library-analysis/assets/config.example.env config.env` and fill it in yourself.)
 
-`run.py` fetches every platform you gave it credentials for, merges them into
-one normalized CSV, and produces two outputs in `data/`:
+`game-library` fetches every platform you gave it credentials for, merges them
+into one normalized CSV, and produces two outputs in `data/`:
 
 - **`library.xlsx`** — the analysis workbook (below)
 - **`report.html`** — a self-contained interactive dashboard: headline stats,
@@ -74,14 +76,15 @@ one normalized CSV, and produces two outputs in `data/`:
   titles, a recency scatter, and played-vs-never-launched by genre. No CDNs,
   works offline, light and dark mode.
 
-Re-run any time to refresh; `python run.py --no-fetch` rebuilds outputs from
-the existing CSV without touching the network. The individual scripts in
-`skills/game-library-analysis/scripts/` still run standalone if you prefer. `config.env` and `data/`
+Re-run any time to refresh; `game-library --no-fetch` rebuilds outputs from
+the existing CSV without touching the network. The individual steps run
+standalone too (`python -m game_library_analysis.fetch_steam`, etc. — see the
+[pipeline repo](https://github.com/roloc/game-library-pipeline)). `config.env` and `data/`
 are read from and written to the folder you run from.
 
 Two things first-time runners hit:
 
-- **`run.py` produces the measurements, not the recommendations.** The
+- **`game-library` produces the measurements, not the recommendations.** The
   ranked picks / skip list / scoreboard are a judgment pass: have Claude
   run the skill's analysis — it writes
   `data/recommendations.json`, and the next rebuild renders it. If your
@@ -150,10 +153,10 @@ themselves.
 Each fetcher writes the same normalized CSV. Concatenate them (keep one header
 row) and rebuild — the workbook grows a Platform column automatically.
 
-- **Xbox** — `fetch_xbox.py`, via a free [OpenXBL](https://xbl.io) key.
+- **Xbox** — `python -m game_library_analysis.fetch_xbox`, via a free [OpenXBL](https://xbl.io) key.
   Newest and least battle-tested fetcher; last-played dates are more reliable
   than hours on Xbox generally.
-- **PlayStation** — `fetch_psn.py`, via the `psnawp` library
+- **PlayStation** — `python -m game_library_analysis.fetch_psn`, via the `psnawp` library
   (`pip install PSNAWP`). **Read the warnings in `config.example.env` first:**
   Sony has no official API, the NPSSO token this route needs is
   password-equivalent, and heavy unofficial API use carries a documented
@@ -163,7 +166,7 @@ row) and rebuild — the workbook grows a Platform column automatically.
   PSN also only reports *played* titles, so there is no PSN backlog view.
 - **Battle.net, Epic, GOG, EA App, console-screen readings** — no APIs exist,
   so these go in `data/manual.csv` (schema in
-  [`manual.example.csv`](skills/game-library-analysis/assets/manual.example.csv)), which `run.py`
+  [`manual.example.csv`](skills/game-library-analysis/assets/manual.example.csv)), which `game-library`
   merges automatically. For WoW, the in-game `/played` command is exact; see
   `references/platforms.md`.
 
@@ -182,16 +185,16 @@ each key you supply is sent only to the service that issued it:
 | OpenXBL API key | `xbl.io` | Xbox title history, playtime, achievements |
 | PSN NPSSO token (optional) | Sony's PSN endpoints, via the `psnawp` library | Played titles and trophies, pulled once and cached |
 
-Nothing is read from your environment beyond those values, which `run.py`
+Nothing is read from your environment beyond those values, which `game-library`
 passes from `config.env` to the matching fetcher; a fetcher run by hand
 reads the same variable name (for example `STEAM_API_KEY`). Keys are never
 printed, logged, or written anywhere except the `config.env` you created.
 
 In a clone of this repo `config.env` and `data/` are gitignored. Run from any
-other git repository, add them to its `.gitignore` — `run.py` warns if it
+other git repository, add them to its `.gitignore` — `game-library` warns if it
 finds `config.env` committable.
 
-If you're running this with an AI assistant: the assistant can run `run.py`
+If you're running this with an AI assistant: the assistant can run `game-library`
 without ever reading `config.env` — never paste a key, NPSSO, or session
 token into a chat, and if you already have, regenerate it.
 
@@ -199,23 +202,19 @@ token into a chat, and if you already have, regenerate it.
 
 ```
 .claude-plugin/plugin.json        plugin manifest
-run.py                            clone convenience: runs the skill's scripts/run.py
 skills/game-library-analysis/     the skill - everything an install ships
   SKILL.md                        the workflow: how to analyze, what makes recommendations trustworthy
   references/platforms.md         per-platform data access routes and their tradeoffs
   references/analysis.md          how to read a library: signals, confounders, framing
   references/completion-signal.md the achievements/trophies axis
-  scripts/run.py                  one command: fetch all configured platforms, merge, build everything
-  scripts/fetch_steam.py          Steam Web API -> normalized CSV
-  scripts/fetch_xbox.py           OpenXBL -> normalized CSV
-  scripts/fetch_psn.py            PSN (psnawp) -> normalized CSV, cache-first
-  scripts/build_workbook.py       normalized CSV -> Excel workbook
-  scripts/build_report.py         normalized CSV -> interactive HTML dashboard
   assets/config.example.env       copy to config.env and fill in
   assets/manual.example.csv       schema for launchers with no API
-  assets/genres.json              name->genre lookup seeded from real tagged libraries
+  assets/genres.json              name->genre seed (a working-dir genres.json overrides it)
   assets/pre2009_appids.json      Steam titles that predate playtime tracking
-examples/                         synthetic sample library, recommendations and report
+examples/                         synthetic sample library and recommendations
+
+The pipeline the skill drives (fetchers, merge, workbook and report builders)
+is the game-library-analysis package: https://github.com/roloc/game-library-pipeline
 ```
 
 ## The completion signal

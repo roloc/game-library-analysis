@@ -18,10 +18,10 @@ produce.
 
 ## Workflow
 
-1. Get the data — `python3 ${CLAUDE_SKILL_DIR}/scripts/run.py` fetches every
-   platform configured in `config.env`, merges, and builds the workbook +
-   HTML report (see `references/platforms.md` for access routes and their
-   tradeoffs)
+1. Get the data — `game-library` (the pipeline package, installed below)
+   fetches every platform configured in `config.env`, merges, and builds the
+   workbook + HTML report (see `references/platforms.md` for access routes
+   and their tradeoffs)
 2. Read `references/analysis.md` and do the analysis pass over the merged CSV
 3. **Write `data/recommendations.json`** — the hand-written judgment
    (schema below). This step is yours, not a script's: verify release
@@ -36,17 +36,25 @@ produced a dashboard, not an analysis.
 
 ### Where things live
 
-- **The pipeline ships with this skill.** It is `scripts/run.py` next to this
-  file — `${CLAUDE_SKILL_DIR}/scripts/run.py`. In a cloned checkout of the
-  repository, `python run.py` at the repo root runs the same script.
-- **The user's files live in the working directory, never in the skill
-  folder:** `config.env` (their keys) and `data/` (pulls, caches, workbook,
-  report, `recommendations.json`). Run the pipeline *from* the folder the
-  user wants those in — an installed plugin's own folder is replaced on every
-  update.
-- **Dependencies:** `pip install openpyxl` (add `PSNAWP` only if doing a
-  PlayStation pull; nothing else is needed)
-  once (openpyxl; PSNAWP is only needed for PlayStation).
+- **The pipeline is a Python package**, installed once:
+  `pip install game-library-analysis` (or
+  `pip install 'game-library-analysis[psn]'` if doing a PlayStation pull).
+  Its source lives at
+  [roloc/game-library-pipeline](https://github.com/roloc/game-library-pipeline);
+  this skill is the methodology that drives it. If pip is unavailable,
+  cloning that repo and running `python -m game_library_analysis` from its
+  root (plus `pip install openpyxl`) is the same thing.
+- **The user's files live in the working directory, never in the package or
+  the skill folder:** `config.env` (their keys) and `data/` (pulls, caches,
+  workbook, report, `recommendations.json`). Run the pipeline *from* the
+  folder the user wants those in — an installed plugin's folder is replaced
+  on every update, and site-packages is not the user's.
+- **Extending the genre seed:** the package ships `genres.json` and
+  `pre2009_appids.json` defaults; a `genres.json` placed in the working
+  directory (or `data/`) overrides the packaged seed, so when tagging
+  Untagged titles, write new entries there — they survive package upgrades.
+  This skill's `assets/genres.json` is the same seed, kept as a reference
+  copy to start that file from.
 
 ### The normalized CSV
 
@@ -61,31 +69,31 @@ Steam,400,Portal,0,,,Playtime untracked (pre-2009)
 `genre` may be left blank — the builder fills it from `assets/genres.json`.
 `last_played` is `YYYY-MM-DD` or empty. `minutes` is an integer.
 
-### Scripts
+### Running the pipeline
 
 The whole pipeline is one command once `config.env` exists in the working
 directory (copy `assets/config.example.env`, fill in keys):
 
 ```bash
-python3 ${CLAUDE_SKILL_DIR}/scripts/run.py             # fetch all configured platforms, merge, workbook + HTML report
-python3 ${CLAUDE_SKILL_DIR}/scripts/run.py --no-fetch  # rebuild outputs from the existing data/library.csv
+game-library             # fetch all configured platforms, merge, workbook + HTML report
+game-library --no-fetch  # rebuild outputs from the existing data/library.csv
 ```
 
-Or piece by piece:
+Or piece by piece (each module runs standalone):
 
 ```bash
 # Steam, straight from the API (key comes from the environment, never an argument)
 export STEAM_API_KEY=...
-python3 ${CLAUDE_SKILL_DIR}/scripts/fetch_steam.py --vanity <name> --out library.csv
+python -m game_library_analysis.fetch_steam --vanity <name> --out library.csv
 
 # or from JSON the user already pulled themselves
-python3 ${CLAUDE_SKILL_DIR}/scripts/fetch_steam.py --from-json owned.json --out library.csv
+python -m game_library_analysis.fetch_steam --from-json owned.json --out library.csv
 
 # the interactive HTML dashboard
-python3 ${CLAUDE_SKILL_DIR}/scripts/build_report.py library.csv --out report.html
+python -m game_library_analysis.build_report library.csv --out report.html
 
 # build the workbook
-python3 ${CLAUDE_SKILL_DIR}/scripts/build_workbook.py library.csv --out library.xlsx
+python -m game_library_analysis.build_workbook library.csv --out library.xlsx
 ```
 
 The workbook is all live formulas, so cached values do not exist until something
@@ -100,9 +108,12 @@ human opens it do you need a recalc pass — in a claude.ai session use
 When `config.env` does not exist, don't just report that the pipeline can't
 run — walk them through hookup:
 
+0. **Install the pipeline** if it isn't already:
+   `pip install game-library-analysis` (add the `[psn]` extra only when the
+   user decides to pull PlayStation in step 3).
 1. **Set up `config.env` for them — pick the path by surface:**
    - *User has a terminal (Claude Code CLI):* point them at the wizard —
-     running `scripts/run.py` in their own terminal walks through every
+     running `game-library` in their own terminal walks through every
      platform interactively and writes `config.env` itself. Keys get typed
      locally, never into the chat.
    - *User has no terminal (Cowork, claude.ai, desktop app):* **create
@@ -115,7 +126,7 @@ run — walk them through hookup:
      pipeline, which reports which platforms are configured.
    Either way, if the working directory is a git repository, add
    `config.env` and `data/` to its `.gitignore` before the keys go in
-   (`run.py` warns when it finds them committable).
+   (`game-library` warns when it finds them committable).
 2. **Front-load the Steam privacy settings** — this is the #1 first-run
    failure and it costs a whole retry cycle if discovered late. Before the
    first pull, tell them plainly:
@@ -142,7 +153,7 @@ Sony's own documentation. If the user pastes one into a chat, or uploads a file
 containing one, tell them to regenerate it.
 
 The pattern that works: **keys live in the user's local `config.env`, and
-the user fills that file in themselves.** You run `run.py`, which passes them
+the user fills that file in themselves.** You run `game-library`, which passes them
 to the fetchers through the environment — you never read, print, or quote the
 file. Each key goes only to the service that issued it: the Steam key to
 `api.steampowered.com`, the OpenXBL key to `xbl.io`, the NPSSO to Sony's PSN
@@ -191,7 +202,7 @@ Full guidance in `references/analysis.md`. The short version:
 ## The recommendations file
 
 Write `data/recommendations.json` by hand — this is judgement, not a script.
-Both builders render it (`run.py` passes it automatically when it exists):
+Both builders render it (`game-library` passes it automatically when it exists):
 the workbook gets a Recommendations sheet, the report a card section.
 
 ```json

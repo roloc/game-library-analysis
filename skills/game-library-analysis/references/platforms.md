@@ -60,7 +60,7 @@ app:
 
 - `psn-api` (JavaScript) — `getUserPlayedGames()` returns played games with
   playtime info, ordered by recency
-- `psnawp` (Python) — same surface; `scripts/fetch_psn.py` uses this one
+- `psnawp` (Python) — same surface; `game_library_analysis.fetch_psn` uses this one
 
 Note the data-shape difference from Steam: PSN only reports titles actually
 *played*. Unplayed purchases never appear, so there is no PSN backlog view and
@@ -104,7 +104,7 @@ hours. The routes that exist:
   inconsistent — treat as a bonus, not a plan.
 
 Enter what you get as rows in `data/manual.csv` (schema in
-`assets/manual.example.csv`); `run.py` merges it automatically.
+`assets/manual.example.csv`); `game-library` merges it automatically.
 
 ## Other launchers
 
