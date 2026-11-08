@@ -5,9 +5,9 @@ retention, and retention only means something for games without an ending.**
 
 Status: **built** (2026-08-03). Field notes from the implementation:
 
-- **PSN is cache-first by policy.** `run.py` pulls trophies exactly once into
+- **PSN is cache-first by policy.** `game-library` pulls trophies exactly once into
   `data/psn_trophies.json` and never re-hits Sony on its own; delete the
-  cache (or run `fetch_psn.py --trophies` by hand) to refresh. Same for the
+  cache (or run `python -m game_library_analysis.fetch_psn --trophies` by hand) to refresh. Same for the
   library pull. This was a deliberate ban-risk call by the account owner.
 - **Xbox's titleHistory achievement block often reports totalAchievements=0
   while progressPercentage is populated.** Key everything on the percentage.
